@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t('zakat_management') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('zakat_management') }}</h1>
+    <a href="{{ url_for('donations.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<!-- بطاقات ملخص الزكاة -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-mosque icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(total_zakat) }}</h3>
+            <p>{{ t('total_zakat') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-hand-holding-heart icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(distributed) }}</h3>
+            <p>{{ t('distributed') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-coins icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(remaining) }}</h3>
+            <p>{{ t('remaining') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- توزيع الزكاة حسب الأصناف الثمانية -->
+<div class="card">
+    <h3>{{ t('distribution_by_category') }}</h3>
+    {% for cat, name in categories %}
+    <div class="zakat-category">
+        <div class="cat-header">
+            <span>{{ name }}</span>
+            <span class="cat-amount">
+                ${{ "%.2f"|format(distributions[cat]) }}
+                ({{ "%.1f"|format((distributions[cat] / (total_zakat or 1)) * 100) }}%)
+            </span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: {{ (distributions[cat] / (total_zakat or 1)) * 100 }}%"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.zakat-category { margin-bottom: 18px; }
+.cat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 600; color: var(--text); }
+.cat-amount { color: var(--text-light); font-size: 0.9rem; }
+.progress-track { background: #F0F2F5; border-radius: 8px; height: 12px; overflow: hidden; }
+.progress-fill { background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; border-radius: 8px; transition: width 0.5s; }
+</style>
+{% endblock %}

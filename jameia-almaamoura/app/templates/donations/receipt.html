@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ t('donation_receipt') }} #{{ donation.donation_number }}{% endblock %}
+{% block content %}
+<div class="receipt-container">
+    <div class="receipt-header">
+        <div class="logo-section">
+            <i class="fas fa-hands-helping fa-3x" style="color: var(--primary)"></i>
+            <div>
+                <h2>{{ t('app_name') }}</h2>
+                <p>{{ t('development_and_solidarity') }}</p>
+            </div>
+        </div>
+        <div class="receipt-info">
+            <h1>{{ t('donation_receipt') }}</h1>
+            <p><strong>{{ t('receipt_number') }}:</strong> {{ donation.donation_number }}</p>
+            <p><strong>{{ t('date') }}:</strong> {{ donation.donation_date }}</p>
+        </div>
+    </div>
+
+    <div class="receipt-body">
+        <div class="info-row">
+            <label>{{ t('donor_name') }}:</label>
+            <span>{{ t('anonymous') if donation.is_anonymous else donation.donor_name }}</span>
+        </div>
+        <div class="info-row">
+            <label>{{ t('amount') }}:</label>
+            <span class="amount">${{ "%.2f"|format(donation.amount) }}</span>
+        </div>
+        <div class="info-row">
+            <label>{{ t('donation_type') }}:</label>
+            <span>{{ t('type_' + donation.donation_type) }}</span>
+        </div>
+        <div class="info-row">
+            <label>{{ t('payment_method') }}:</label>
+            <span>{{ donation.payment_method }}</span>
+        </div>
+    </div>
+
+    <div class="receipt-footer">
+        <div class="signature">
+            <div class="sig-line"></div>
+            <p>{{ t('receiver_signature') }}</p>
+        </div>
+        <div class="stamp">
+            <div class="stamp-circle">
+                <i class="fas fa-stamp fa-3x"></i>
+                <p>{{ t('association_stamp') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-actions no-print">
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="fas fa-print"></i> {{ t('print') }}
+        </button>
+        <a href="{{ url_for('donations.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> {{ t('back') }}
+        </a>
+    </div>
+</div>
+
+<style>
+.receipt-container { max-width: 800px; margin: 20px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double var(--primary); padding-bottom: 20px; margin-bottom: 30px; }
+.logo-section { display: flex; gap: 15px; align-items: center; }
+.logo-section h2 { color: var(--primary); margin: 0; }
+.receipt-info { text-align: end; }
+.receipt-info h1 { color: var(--primary); margin: 0 0 10px 0; }
+.info-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px dashed #ddd; }
+.info-row label { font-weight: 600; color: #555; }
+.info-row .amount { font-size: 1.5rem; color: var(--primary); font-weight: 700; }
+.receipt-footer { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 30px; }
+.sig-line { width: 200px; border-top: 2px solid #333; margin-bottom: 10px; }
+.stamp-circle { text-align: center; color: var(--primary); opacity: 0.7; }
+@media print {
+    .no-print { display: none !important; }
+    body { background: white; }
+}
+</style>
+{% endblock %}

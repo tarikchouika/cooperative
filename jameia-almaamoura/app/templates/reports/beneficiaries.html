@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ t('beneficiaries_report') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-hand-holding-heart"></i> {{ t('beneficiaries_report') }}</h1>
+    <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">{{ t('back') }}</a>
+</div>
+
+<div class="grid-2">
+    <!-- المستفيدون حسب المنطقة -->
+    <div class="card">
+        <h3><i class="fas fa-map-marker-alt"></i> {{ t('by_region') }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t('address') }}</th>
+                    <th>{{ t('count') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in stats['by_region'] %}
+                <tr>
+                    <td>{{ row['address'] or '—' }}</td>
+                    <td>{{ row['count'] }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="2" style="text-align:center; padding:20px;">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- المستفيدون حسب نوع الحاجة -->
+    <div class="card">
+        <h3><i class="fas fa-hands-helping"></i> {{ t('by_need') }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t('needs_description') }}</th>
+                    <th>{{ t('count') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in stats['by_need'] %}
+                <tr>
+                    <td>{{ row['needs_description'] or '—' }}</td>
+                    <td>{{ row['count'] }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="2" style="text-align:center; padding:20px;">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

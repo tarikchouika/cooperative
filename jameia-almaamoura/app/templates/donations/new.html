@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ t('new_donation') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('new_donation') }}</h1>
+    <a href="{{ url_for('donations.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<div class="card">
+    <h3>{{ t('new_donation') }}</h3>
+    <form method="POST" action="{{ url_for('donations.new_donation') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="donor_id">{{ t('donor') }}</label>
+                <select id="donor_id" name="donor_id" class="form-control">
+                    <option value="">{{ t('select_donor') }}</option>
+                    {% for do in donors %}
+                    <option value="{{ do.id }}">{{ do.full_name or do.company_name or do.id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="donation_type">{{ t('donation_type') }}</label>
+                <select id="donation_type" name="donation_type" class="form-control" required>
+                    <option value="general">{{ t('type_general') }}</option>
+                    <option value="zakat">{{ t('type_zakat') }}</option>
+                    <option value="kafara">{{ t('type_kafara') }}</option>
+                    <option value="sadaqa">{{ t('type_sadaqa') }}</option>
+                    <option value="waqf">{{ t('type_waqf') }}</option>
+                    <option value="specific">{{ t('type_specific') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="amount">{{ t('amount') }}</label>
+                <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="payment_method">{{ t('payment_method') }}</label>
+                <select id="payment_method" name="payment_method" class="form-control" required>
+                    <option value="cash">{{ t('method_cash') }}</option>
+                    <option value="bank_transfer">{{ t('method_bank_transfer') }}</option>
+                    <option value="cheque">{{ t('method_cheque') }}</option>
+                    <option value="online">{{ t('method_online') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="project_id">{{ t('project') }}</label>
+                <select id="project_id" name="project_id" class="form-control">
+                    <option value="">{{ t('select_project') }}</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}">{{ p.project_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="campaign_id">{{ t('campaign') }}</label>
+                <select id="campaign_id" name="campaign_id" class="form-control">
+                    <option value="">{{ t('select_campaign') }}</option>
+                    {% for c in campaigns %}
+                    <option value="{{ c.id }}">{{ c.campaign_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="is_anonymous" value="1"> {{ t('anonymous_donation') }}
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-check"></i> {{ t('save') }}
+        </button>
+    </form>
+</div>
+{% endblock %}

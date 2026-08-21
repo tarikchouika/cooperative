@@ -1,0 +1,67 @@
+You are an expert full-stack developer. Create a COMPLETE, PRODUCTION-READY cooperative accounting system.
+
+## Tech Stack
+- Next.js 14 (App Router) with TypeScript
+- Tailwind CSS 3 + shadcn/ui components
+- Prisma ORM + SQLite
+- Recharts for charts
+- React Hook Form + Zod for forms
+- date-fns for dates
+- Zustand for state
+
+## Requirements
+
+### 1. Dashboard (Home Page)
+- Stats cards: Total Members, Treasury Balance, Monthly Transactions, Pending Amounts
+- Transaction chart (line/bar) showing last 12 months
+- Recent transactions table (last 10)
+- Quick action buttons
+
+### 2. Members Management (/members)
+- Table with search, filter by status, sort by name/date
+- Add/Edit member: name, phone, email, join date, status (active/inactive)
+- Member profile page with transaction history
+- Delete with confirmation dialog
+
+### 3. Transactions (/transactions)
+- Form: type (deposit/withdraw/transfer), amount, date, description, member
+- For transfers: source member + target member
+- Transaction list with filters (date range, type, member)
+- Summary stats at top (total deposits, withdrawals, transfers, net)
+
+### 4. Treasury (/treasury)
+- Current balance display
+- Daily movement log
+- Balance trend chart
+
+### 5. Reports (/reports)
+- Monthly summary report
+- Member account statement
+- Date range selector
+- Print-friendly layout
+
+### 6. Settings (/settings)
+- Association info (name, logo, address)
+- Currency setting
+- Export data
+
+## Design Requirements
+- Arabic RTL interface with professional dark sidebar
+- Color scheme: Indigo/blue primary with slate backgrounds
+- Smooth transitions and animations
+- Mobile responsive
+- shadcn/ui components throughout
+- Charts with Recharts (line, bar, pie)
+
+## Important
+- Provide COMPLETE code for ALL files - no placeholders
+- All API routes must work with Prisma + SQLite
+- Seed script with sample data
+- prisma/schema.prisma with complete schema
+- Must build and deploy to Vercel without errors
+- Use "use client" where needed for interactivity
+- Arabic labels and UI text throughout
+
+## Output Format
+Provide each file with its full path as a header, then the complete code in a code block.
+Start with package.json, then prisma schema, then all source files.

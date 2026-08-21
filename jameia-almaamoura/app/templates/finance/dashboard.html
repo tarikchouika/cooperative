@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finance') }}{% endblock %}
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .table-scroll { overflow-x: auto; }
+</style>
+<div class="page-header">
+    <h1>{{ t('finance_dashboard') }}</h1>
+    <a href="{{ url_for('finance.new_journal_entry') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ t('new_journal_entry') }}
+    </a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><i class="fas fa-coins icon"></i><div><h3>${{ "%.2f"|format(stats.total_assets) }}</h3><p>{{ t('total_assets') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-arrow-up icon" style="color:#4CAF50"></i><div><h3>${{ "%.2f"|format(stats.total_revenue) }}</h3><p>{{ t('total_revenue') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-arrow-down icon" style="color:#F44336"></i><div><h3>${{ "%.2f"|format(stats.total_expenses) }}</h3><p>{{ t('total_expenses') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-clock icon" style="color:#FF9800"></i><div><h3>{{ stats.pending_entries }}</h3><p>{{ t('pending_entries') }}</p></div></div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>{{ t('recent_journal_entries') }}</h3>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>{{ t('entry_number') }}</th><th>{{ t('date') }}</th><th>{{ t('description') }}</th><th>{{ t('amount') }}</th><th>{{ t('status') }}</th></tr></thead>
+            <tbody>
+                {% for entry in recent %}
+                <tr>
+                    <td>{{ entry.entry_number }}</td>
+                    <td>{{ entry.entry_date }}</td>
+                    <td>{{ entry.description }}</td>
+                    <td>${{ "%.2f"|format(entry.total_debit) }}</td>
+                    <td><span class="badge badge-{{ 'success' if entry.status == 'approved' else 'warning' }}">{{ entry.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center">{{ t('no_data') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <h3>{{ t('quick_actions') }}</h3>
+        <div class="quick-actions">
+            <a href="{{ url_for('finance.chart_of_accounts') }}" class="action-btn"><i class="fas fa-list"></i> {{ t('chart_of_accounts') }}</a>
+            <a href="{{ url_for('finance.trial_balance') }}" class="action-btn"><i class="fas fa-balance-scale"></i> {{ t('trial_balance') }}</a>
+            <a href="{{ url_for('finance.balance_sheet') }}" class="action-btn"><i class="fas fa-file-invoice-dollar"></i> {{ t('balance_sheet') }}</a>
+            <a href="{{ url_for('finance.income_statement') }}" class="action-btn"><i class="fas fa-chart-line"></i> {{ t('income_statement') }}</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

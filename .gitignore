@@ -1,0 +1,37 @@
+# ===== Dependencies =====
+node_modules/
+
+# ===== Secrets / env =====
+.env
+.env.local
+.env.*.local
+.envrc
+# KEEP: .env.example
+
+# ===== Build output (generated) =====
+dist/
+build/
+out/
+.next/
+.output/
+
+# ===== Caches / virtual envs =====
+__pycache__/
+.cache/
+.venv/
+venv/
+
+# ===== Large binaries (>50MB) =====
+*.mp4
+*.mov
+*.zip
+*.tar
+*.tar.gz
+*.bin
+*.pth
+*.onnx
+*.gguf
+*.wav
+*.mp3
+videos/
+# *.pdf excluded only if huge

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ t('add_beneficiary') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user-plus"></i> {{ t('add_beneficiary') }}</h1>
+    <a href="{{ url_for('beneficiaries.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<div class="card">
+    <h3><i class="fas fa-id-card"></i> {{ t('beneficiary_info') }}</h3>
+    <form method="POST" action="{{ url_for('beneficiaries.new') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="full_name">* {{ t('full_name') }}</label>
+                <input type="text" id="full_name" name="full_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="national_id">* {{ t('national_id') }}</label>
+                <input type="text" id="national_id" name="national_id" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="gender">{{ t('gender') }}</label>
+                <select id="gender" name="gender" class="form-control">
+                    <option value="male">{{ t('male') }}</option>
+                    <option value="female">{{ t('female') }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="birthdate">{{ t('birthdate') }}</label>
+                <input type="date" id="birthdate" name="birthdate" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="family_size">{{ t('family_size') }}</label>
+                <input type="number" id="family_size" name="family_size" class="form-control" min="1" value="1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="phone">{{ t('phone') }}</label>
+                <input type="text" id="phone" name="phone" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="income_level">{{ t('income_level') }}</label>
+                <select id="income_level" name="income_level" class="form-control">
+                    <option value="low">{{ t('income_low') }}</option>
+                    <option value="medium" selected>{{ t('income_medium') }}</option>
+                    <option value="high">{{ t('income_high') }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="address">{{ t('address') }}</label>
+            <input type="text" id="address" name="address" class="form-control">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="social_status">{{ t('social_status') }}</label>
+                <input type="text" id="social_status" name="social_status" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="needs_description">{{ t('needs_description') }}</label>
+                <textarea id="needs_description" name="needs_description" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ t('save') }}</button>
+            <a href="{{ url_for('beneficiaries.index') }}" class="btn btn-secondary">{{ t('cancel') }}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

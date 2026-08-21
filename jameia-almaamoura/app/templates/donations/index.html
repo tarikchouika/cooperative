@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ t('donations') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('donations') }}</h1>
+    {% if session.role in ['admin', 'accountant'] %}
+    <a href="{{ url_for('donations.new_donation') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ t('new_donation') }}
+    </a>
+    {% endif %}
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-coins icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(stats.total) }}</h3>
+            <p>{{ t('total_donations') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-calendar-days icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(stats.this_month) }}</h3>
+            <p>{{ t('monthly_donations') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-mosque icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(stats.zakat_balance) }}</h3>
+            <p>{{ t('zakat_balance') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-users icon"></i>
+        <div>
+            <h3>{{ stats.donors_count }}</h3>
+            <p>{{ t('donors_count') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- إجراءات سريعة -->
+<div class="card">
+    <h3>{{ t('quick_actions') }}</h3>
+    <div class="quick-actions">
+        {% if session.role in ['admin', 'accountant'] %}
+        <a href="{{ url_for('donations.new_donation') }}" class="action-btn">
+            <i class="fas fa-hand-holding-heart"></i>
+            <span>{{ t('new_donation') }}</span>
+        </a>
+        <a href="{{ url_for('donations.zakat') }}" class="action-btn">
+            <i class="fas fa-mosque"></i>
+            <span>{{ t('zakat_management') }}</span>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('donations.campaigns') }}" class="action-btn">
+            <i class="fas fa-bullhorn"></i>
+            <span>{{ t('campaigns') }}</span>
+        </a>
+    </div>
+</div>
+
+<!-- آخر التبرعات -->
+<div class="card">
+    <h3>{{ t('recent_donations') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('receipt_number') }}</th>
+                <th>{{ t('donor_name') }}</th>
+                <th>{{ t('date') }}</th>
+                <th>{{ t('amount') }}</th>
+                <th>{{ t('donation_type') }}</th>
+                <th>{{ t('actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in recent %}
+            <tr>
+                <td>{{ d.donation_number }}</td>
+                <td>{{ t('anonymous') if d.is_anonymous else d.donor_name }}</td>
+                <td>{{ d.donation_date }}</td>
+                <td>${{ "%.2f"|format(d.amount) }}</td>
+                <td>
+                    <span class="badge {{ {'general':'badge-info','zakat':'badge-warning','kafara':'badge-danger','sadaqa':'badge-success','waqf':'badge-info','specific':'badge-warning'}.get(d.donation_type, 'badge-info') }}">
+                        {{ t('type_' + d.donation_type) }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('donations.receipt', number=d.donation_number) }}" class="btn btn-sm btn-primary" title="{{ t('view') }}">
+                        <i class="fas fa-file-invoice"></i> {{ t('view') }}
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align:center; color:var(--text-light);">{{ t('no_data') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

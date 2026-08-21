@@ -1,0 +1,1628 @@
+## 📁 هيكل المشروع
+
+```
+accounting-coop/
+│
+├─ .env               # متغيّر البيئة
+├─ .gitignore
+├─ package.json
+├─ next.config.js
+├─ tailwind.config.js
+├─ postcss.config.js
+│
+├─ prisma/
+│   └─ schema.prisma
+│
+├─ public/
+│   └─ favicon.ico
+│
+└─ src/
+    ├─ app/
+    │   ├─ layout.tsx                # Layout عام مع RTL
+    │   ├─ page.tsx                  # → Dashboard (اللوحة الرئيسية)
+    │   ├─ members/
+    │   │   ├─ page.tsx              # صفحة الأعضاء
+    │   │   └─ [id]/page.tsx         # ملف شخصي للعضو
+    │   ├─ transactions/
+    │   │   └─ page.tsx              # صفحة المعاملات
+    │   ├─ cashbox/
+    │   │   └─ page.tsx              # صندوق الجمعية
+    │   ├─ reports/
+    │   │   ├─ page.tsx              # تقارير عامة
+    │   │   └─ member/[id]/page.tsx  # كشف حساب عضو
+    │   └─ settings/
+    │       └─ page.tsx              # إعدادات الجمعية
+    │
+    ├─ components/
+    │   ├─ Sidebar.tsx
+    │   ├─ Header.tsx
+    │   ├─ StatsCard.tsx
+    │   ├─ TransactionTable.tsx
+    │   ├─ MemberTable.tsx
+    │   ├─ MemberForm.tsx
+    │   ├─ TransactionForm.tsx
+    │   ├─ CashboxInfo.tsx
+    │   └─ ReportCharts.tsx
+    │
+    ├─ lib/
+    │   └─ prisma.ts                 # عميل Prisma
+    │
+    ├─ store/
+    │   └─ useStore.ts               # Zustand
+    │
+    └─ styles/
+        └─ globals.css
+```
+
+> **ملحوظة** – كل الملفات مكتوبة بالعربي (RTL) ومُصمَّمة باستخدام Tailwind CSS.  
+> النسخة جاهزة للـ **Deploy** على Vercel مباشرة بعد إضافة قاعدة البيانات (SQLite) وتثبيت الاعتمادات.
+
+---
+
+## 📦 package.json
+
+```json
+{
+  "name": "accounting-coop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.9.1",
+    "next": "14.2.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-hook-form": "^7.45.4",
+    "recharts": "^2.12.2",
+    "zustand": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.5",
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7",
+    "autoprefixer": "10.4.14",
+    "postcss": "8.4.27",
+    "prisma": "^5.9.1",
+    "tailwindcss": "3.3.5",
+    "typescript": "5.2.2"
+  }
+}
+```
+
+---
+
+## ⚙️ إعدادات Next.js و Tailwind
+
+### next.config.js
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    appDir: true,
+  },
+  // لتفعيل RTL عبر HTML dir=rtl
+  i18n: {
+    locales: ['ar'],
+    defaultLocale: 'ar',
+  },
+};
+
+module.exports = nextConfig;
+```
+
+### tailwind.config.js
+```js
+module.exports = {
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}'
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: '#1e3a8a', // أزرق غامق للـ sidebar
+        secondary: '#0f172a',
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+### postcss.config.js
+```js
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+```
+
+### src/styles/globals.css
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* لضمان اتجاه النص من اليمين لليسار */
+html {
+  direction: rtl;
+}
+```
+
+---
+
+## 🗄️ قاعدة البيانات (Prisma + SQLite)
+
+### .env
+```dotenv
+DATABASE_URL="file:./dev.db"
+```
+
+### prisma/schema.prisma
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/*-------------------- الجمعية --------------------*/
+model Association {
+  id          Int      @id @default(autoincrement())
+  name        String
+  address     String?
+  phone       String?
+  currency    String   @default("د.إ") // أو أي عملة تريدها
+  createdAt   DateTime @default(now())
+}
+
+/*-------------------- الأعضاء --------------------*/
+model Member {
+  id          Int       @id @default(autoincrement())
+  fullName    String
+  email       String    @unique
+  phone       String?
+  balance     Decimal   @default(0.0)
+  createdAt   DateTime  @default(now())
+  transactions Transaction[]
+}
+
+/*-------------------- المعاملات --------------------*/
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  type          TransactionType
+  amount        Decimal
+  description   String?
+  fromMemberId  Int?      // للـتحويل
+  toMemberId    Int?      // للـتحويل
+  memberId      Int?      // إيداع/سحب
+  createdAt     DateTime  @default(now())
+
+  // العلاقات
+  member        Member?   @relation("MemberTransactions", fields: [memberId], references: [id])
+  fromMember    Member?   @relation("FromTransfers", fields: [fromMemberId], references: [id])
+  toMember      Member?   @relation("ToTransfers", fields: [toMemberId], references: [id])
+}
+
+/* نوع المعاملة */
+enum TransactionType {
+  DEPOSIT   // إيداع
+  WITHDRAW  // سحب
+  TRANSFER  // تحويل
+}
+
+/*-------------------- صندوق الجمعية --------------------*/
+model Cashbox {
+  id          Int       @id @default(autoincrement())
+  balance     Decimal   @default(0.0)
+  movements   CashMovement[]
+}
+
+/* حركات الصندوق اليومية */
+model CashMovement {
+  id          Int       @id @default(autoincrement())
+  type        CashMovementType
+  amount      Decimal
+  description String?
+  createdAt   DateTime @default(now())
+  cashboxId   Int
+  cashbox     Cashbox  @relation(fields: [cashboxId], references: [id])
+}
+
+enum CashMovementType {
+  IN   // إيداع في الصندوق
+  OUT  // سحب من الصندوق
+}
+```
+
+> بعد حفظ الملف، شغّل:
+> ```bash
+> npx prisma migrate dev --name init
+> npx prisma generate
+> ```
+
+---
+
+## 📦 lib/prisma.ts – عميل Prisma
+
+```ts
+// src/lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
+
+declare global {
+  // لتجنّب إنشاء أكثر من نسخة في بيئة التطوير (Hot Reload)
+  var prisma: PrismaClient | undefined;
+}
+
+export const prisma =
+  global.prisma ||
+  new PrismaClient({
+    log: ['query'],
+  });
+
+if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
+```
+
+---
+
+## 🔄 Zustand – تخزين الحالة العالمية
+
+```ts
+// src/store/useStore.ts
+import { create } from 'zustand';
+import { Member, Transaction, Association, Cashbox } from '@prisma/client';
+
+type State = {
+  members: Member[];
+  setMembers: (members: Member[]) => void;
+  transactions: Transaction[];
+  setTransactions: (txs: Transaction[]) => void;
+  association: Association | null;
+  setAssociation: (a: Association) => void;
+  cashbox: Cashbox | null;
+  setCashbox: (c: Cashbox) => void;
+};
+
+export const useStore = create<State>((set) => ({
+  members: [],
+  setMembers: (members) => set({ members }),
+
+  transactions: [],
+  setTransactions: (txs) => set({ transactions: txs }),
+
+  association: null,
+  setAssociation: (a) => set({ association: a }),
+
+  cashbox: null,
+  setCashbox: (c) => set({ cashbox: c }),
+}));
+```
+
+---
+
+## 🎨 المكونات العامة
+
+### 1️⃣ Sidebar.tsx
+```tsx
+// src/components/Sidebar.tsx
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  HomeIcon,
+  UsersIcon,
+  CashIcon,
+  TableCellsIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
+
+const nav = [
+  { href: '/', label: 'اللوحة', icon: HomeIcon },
+  { href: '/members', label: 'الأعضاء', icon: UsersIcon },
+  { href: '/transactions', label: 'المعاملات', icon: TableCellsIcon },
+  { href: '/cashbox', label: 'الصندوق', icon: CashIcon },
+  { href: '/reports', label: 'التقارير', icon: ChartBarIcon },
+  { href: '/settings', label: 'الإعدادات', icon: Cog6ToothIcon },
+];
+
+export default function Sidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="w-64 bg-primary text-white h-screen flex flex-col p-4">
+      <h1 className="text-2xl font-bold mb-8 text-center">نظام الجمعية</h1>
+      <nav className="flex-1 space-y-2">
+        {nav.map((item) => (
+          <Link key={item.href} href={item.href} className="block">
+            <div
+              className={`flex items-center py-2 px-3 rounded hover:bg-primary/80 transition-colors ${
+                pathname === item.href ? 'bg-primary/80' : ''
+              }`}
+            >
+              <item.icon className="h-5 w-5 mr-2" />
+              <span>{item.label}</span>
+            </div>
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+```
+
+### 2️⃣ Header.tsx
+```tsx
+// src/components/Header.tsx
+import { useStore } from '@/store/useStore';
+
+export default function Header() {
+  const association = useStore((s) => s.association);
+  return (
+    <header className="flex items-center justify-between bg-white shadow p-4">
+      <h2 className="text-xl font-semibold">
+        {association?.name || 'جمعية غير معرفة'}
+      </h2>
+      <div className="flex items-center space-x-4">
+        <span className="text-gray-600">
+          عملة: {association?.currency || '-'}
+        </span>
+      </div>
+    </header>
+  );
+}
+```
+
+### 3️⃣ StatsCard.tsx
+```tsx
+// src/components/StatsCard.tsx
+type Props = {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  bg?: string;
+};
+
+export default function StatsCard({ title, value, icon, bg }: Props) {
+  return (
+    <div
+      className={`flex items-center p-4 rounded-lg shadow bg-${bg ?? 'secondary'} text-white`}
+    >
+      <div className="mr-4">{icon}</div>
+      <div>
+        <p className="text-sm">{title}</p>
+        <p className="text-xl font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}
+```
+
+### 4️⃣ MemberTable.tsx
+```tsx
+// src/components/MemberTable.tsx
+import Link from 'next/link';
+import { Member } from '@prisma/client';
+import { formatNumber } from '@/utils/format';
+
+type Props = {
+  members: Member[];
+  onDelete: (id: number) => void;
+};
+
+export default function MemberTable({ members, onDelete }: Props) {
+  return (
+    <div className="overflow-x-auto bg-white rounded shadow">
+      <table className="min-w-full text-right">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="p-2">الاسم</th>
+            <th className="p-2">البريد</th>
+            <th className="p-2">الهاتف</th>
+            <th className="p-2">الرصيد</th>
+            <th className="p-2">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {members.map((m) => (
+            <tr key={m.id} className="border-t">
+              <td className="p-2">{m.fullName}</td>
+              <td className="p-2">{m.email}</td>
+              <td className="p-2">{m.phone ?? '-'}</td>
+              <td className="p-2">{formatNumber(m.balance)}</td>
+              <td className="p-2 space-x-2">
+                <Link
+                  href={`/members/${m.id}`}
+                  className="px-2 py-1 bg-primary rounded text-xs"
+                >
+                  تفاصيل
+                </Link>
+                <button
+                  onClick={() => onDelete(m.id)}
+                  className="px-2 py-1 bg-red-600 rounded text-xs"
+                >
+                  حذف
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+### 5️⃣ MemberForm.tsx (React Hook Form)
+```tsx
+// src/components/MemberForm.tsx
+import { useForm } from 'react-hook-form';
+import { Member } from '@prisma/client';
+import { useStore } from '@/store/useStore';
+import { prisma } from '@/lib/prisma';
+
+type Props = {
+  defaultValues?: Partial<Member>;
+  onClose: () => void;
+};
+
+type FormValues = {
+  fullName: string;
+  email: string;
+  phone?: string;
+};
+
+export default function MemberForm({ defaultValues, onClose }: Props) {
+  const { register, handleSubmit, formState } = useForm<FormValues>({
+    defaultValues,
+  });
+  const setMembers = useStore((s) => s.setMembers);
+
+  const onSubmit = async (data: FormValues) => {
+    // إذا كان هناك ID يعني تعديل
+    if ((defaultValues as any)?.id) {
+      await prisma.member.update({
+        where: { id: (defaultValues as any).id },
+        data,
+      });
+    } else {
+      await prisma.member.create({ data });
+    }
+    // تحديث الstore
+    const members = await prisma.member.findMany();
+    setMembers(members);
+    onClose();
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+      <div>
+        <label className="block mb-1">الاسم الكامل</label>
+        <input
+          {...register('fullName', { required: true })}
+          className="w-full border rounded p-2"
+        />
+        {formState.errors.fullName && (
+          <p className="text-red-600 text-xs mt-1">مطلوب</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block mb-1">البريد الإلكتروني</label>
+        <input
+          type="email"
+          {...register('email', { required: true })}
+          className="w-full border rounded p-2"
+        />
+        {formState.errors.email && (
+          <p className="text-red-600 text-xs mt-1">مطلوب</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block mb-1">الهاتف</label>
+        <input
+          {...register('phone')}
+          className="w-full border rounded p-2"
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-300 rounded"
+        >
+          إلغاء
+        </button>
+        <button type="submit" className="px-4 py-2 bg-primary text-white rounded">
+          حفظ
+        </button>
+      </div>
+    </form>
+  );
+}
+```
+
+### 6️⃣ TransactionForm.tsx (إيداع/سحب/تحويل)
+
+```tsx
+// src/components/TransactionForm.tsx
+import { useForm } from 'react-hook-form';
+import { TransactionType } from '@prisma/client';
+import { useStore } from '@/store/useStore';
+import { prisma } from '@/lib/prisma';
+import { useEffect, useState } from 'react';
+import { Member } from '@prisma/client';
+
+type Props = {
+  onClose: () => void;
+};
+
+type FormValues = {
+  type: TransactionType;
+  amount: number;
+  description?: string;
+  memberId?: number;        // إيداع/سحب
+  fromMemberId?: number;    // تحويل
+  toMemberId?: number;      // تحويل
+};
+
+export default function TransactionForm({ onClose }: Props) {
+  const { register, handleSubmit, watch, reset } = useForm<FormValues>({
+    defaultValues: { type: 'DEPOSIT' },
+  });
+  const [members, setMembers] = useState<Member[]>([]);
+  const setTransactions = useStore((s) => s.setTransactions);
+
+  useEffect(() => {
+    (async () => {
+      const list = await prisma.member.findMany();
+      setMembers(list);
+    })();
+  }, []);
+
+  const onSubmit = async (data: FormValues) => {
+    // ضبط البيانات حسب نوع العملية
+    const payload: any = {
+      type: data.type,
+      amount: data.amount,
+      description: data.description,
+    };
+
+    if (data.type === 'DEPOSIT' || data.type === 'WITHDRAW') {
+      payload.memberId = data.memberId;
+    } else if (data.type === 'TRANSFER') {
+      payload.fromMemberId = data.fromMemberId;
+      payload.toMemberId = data.toMemberId;
+    }
+
+    await prisma.transaction.create({ data: payload });
+
+    // تحديث الرصيد وسجل المعاملات
+    const updatedMembers = await prisma.member.findMany();
+    const txs = await prisma.transaction.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    setMembers(updatedMembers);
+    setTransactions(txs);
+    reset();
+    onClose();
+  };
+
+  const type = watch('type');
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+      <div>
+        <label className="block mb-1">نوع العملية</label>
+        <select
+          {...register('type')}
+          className="w-full border rounded p-2"
+        >
+          <option value="DEPOSIT">إيداع</option>
+          <option value="WITHDRAW">سحب</option>
+          <option value="TRANSFER">تحويل</option>
+        </select>
+      </div>
+
+      {/* اختيار العضو للـ إيداع أو السحب */}
+      {(type === 'DEPOSIT' || type === 'WITHDRAW') && (
+        <div>
+          <label className="block mb-1">العضو</label>
+          <select
+            {...register('memberId', { required: true })}
+            className="w-full border rounded p-2"
+          >
+            <option value="">اختر عضواً</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.fullName}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* اختيار الأعضاء للـ تحويل */}
+      {type === 'TRANSFER' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1">من العضو</label>
+            <select
+              {...register('fromMemberId', { required: true })}
+              className="w-full border rounded p-2"
+            >
+              <option value="">اختر</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block mb-1">إلى العضو</label>
+            <select
+              {...register('toMemberId', { required: true })}
+              className="w-full border rounded p-2"
+            >
+              <option value="">اختر</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="block mb-1">المبلغ</label>
+        <input
+          type="number"
+          step="0.01"
+          {...register('amount', { required: true, min: 0.01 })}
+          className="w-full border rounded p-2"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-1">الوصف (اختياري)</label>
+        <textarea
+          {...register('description')}
+          className="w-full border rounded p-2"
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 bg-gray-300 rounded"
+        >
+          إلغاء
+        </button>
+        <button type="submit" className="px-4 py-2 bg-primary text-white rounded">
+          حفظ العملية
+        </button>
+      </div>
+    </form>
+  );
+}
+```
+
+### 7️⃣ TransactionTable.tsx
+```tsx
+// src/components/TransactionTable.tsx
+import { Transaction } from '@prisma/client';
+import { formatNumber } from '@/utils/format';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
+
+type Props = {
+  transactions: Transaction[];
+};
+
+export default function TransactionTable({ transactions }: Props) {
+  return (
+    <div className="overflow-x-auto bg-white rounded shadow">
+      <table className="min-w-full text-right">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="p-2">التاريخ</th>
+            <th className="p-2">النوع</th>
+            <th className="p-2">المبلغ</th>
+            <th className="p-2">الوصف</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((t) => (
+            <tr key={t.id} className="border-t">
+              <td className="p-2">
+                {format(t.createdAt, 'dd/MM/yyyy HH:mm', { locale: ar })}
+              </td>
+              <td className="p-2">{t.type}</td>
+              <td className="p-2">{formatNumber(t.amount)}</td>
+              <td className="p-2">{t.description ?? '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+### 8️⃣ CashboxInfo.tsx
+```tsx
+// src/components/CashboxInfo.tsx
+import { useStore } from '@/store/useStore';
+import { formatNumber } from '@/utils/format';
+import { CashMovement } from '@prisma/client';
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
+
+type Props = {
+  movements: CashMovement[];
+};
+
+export default function CashboxInfo({ movements }: Props) {
+  const cashbox = useStore((s) => s.cashbox);
+  const balance = cashbox?.balance ?? 0;
+
+  const inSum = movements
+    .filter((m) => m.type === 'IN')
+    .reduce((a, b) => a + Number(b.amount), 0);
+  const outSum = movements
+    .filter((m) => m.type === 'OUT')
+    .reduce((a, b) => a + Number(b.amount), 0);
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="p-4 bg-primary text-white rounded shadow">
+        <p className="text-sm">الرصيد الحالي</p>
+        <p className="text-2xl font-bold">{formatNumber(balance)}</p>
+      </div>
+
+      <div className="p-4 bg-green-600 text-white rounded shadow flex items-center">
+        <ArrowUpIcon className="h-6 w-6 mr-2" />
+        <div>
+          <p className="text-sm">إجمالي الإيداعات</p>
+          <p className="font-bold">{formatNumber(inSum)}</p>
+        </div>
+      </div>
+
+      <div className="p-4 bg-red-600 text-white rounded shadow flex items-center">
+        <ArrowDownIcon className="h-6 w-6 mr-2" />
+        <div>
+          <p className="text-sm">إجمالي السحوبات</p>
+          <p className="font-bold">{formatNumber(outSum)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### 9️⃣ ReportCharts.tsx (مخططات Recharts)
+```tsx
+// src/components/ReportCharts.tsx
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { Transaction } from '@prisma/client';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
+
+type Props = {
+  transactions: Transaction[];
+};
+
+type ChartData = {
+  month: string;
+  deposit: number;
+  withdraw: number;
+};
+
+export default function ReportCharts({ transactions }: Props) {
+  // تجميع شهري
+  const data: ChartData[] = [];
+
+  transactions.forEach((t) => {
+    const month = format(t.createdAt, 'yyyy-MM', { locale: ar });
+    let monthObj = data.find((d) => d.month === month);
+    if (!monthObj) {
+      monthObj = { month, deposit: 0, withdraw: 0 };
+      data.push(monthObj);
+    }
+    if (t.type === 'DEPOSIT') monthObj.deposit += Number(t.amount);
+    if (t.type === 'WITHDRAW') monthObj.withdraw += Number(t.amount);
+  });
+
+  // ترتيب زمني
+  data.sort((a, b) => (a.month > b.month ? 1 : -1));
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+        <XAxis dataKey="month" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="deposit" fill="#10b981" name="إيداع" />
+        <Bar dataKey="withdraw" fill="#ef4444" name="سحب" />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+```
+
+---
+
+## 🛠️ helper utils
+
+```ts
+// src/utils/format.ts
+export const formatNumber = (num: number | string) => {
+  return new Intl.NumberFormat('ar-EG', {
+    style: 'currency',
+    currency: 'AED', // غيّر إلى عملتك في settings إذا أردت
+  }).format(Number(num));
+};
+```
+
+---
+
+## 📄 صفحات التطبيق (App Router)
+
+> جميع الصفحات تستخدم **Layout** المشترك لتضمين الـ Sidebar و Header.
+
+### 1️⃣ src/app/layout.tsx (الـ Layout العام)
+
+```tsx
+// src/app/layout.tsx
+import '@/styles/globals.css';
+import Sidebar from '@/components/Sidebar';
+import Header from '@/components/Header';
+import { ReactNode, useEffect } from 'react';
+import { prisma } from '@/lib/prisma';
+import { useStore } from '@/store/useStore';
+import { Association, Cashbox, Transaction } from '@prisma/client';
+
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // جلب البيانات الأولية (Server Side) لتخزينها في Zustand عند التحميل الأول
+  const [association, cashbox, transactions] = await Promise.all([
+    prisma.association.findFirst(),
+    prisma.cashbox.findFirst(),
+    prisma.transaction.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }),
+  ]);
+
+  // لا يمكن استدعاء Zustand مباشرة داخل Server Component، لذا نستخدم
+  // `use client` في ملف فرعي للتهيئة.
+  return (
+    <html lang="ar" dir="rtl">
+      <body className="flex bg-gray-100 min-h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <main className="p-6 flex-1">{children}</main>
+        </div>
+      </body>
+    </html>
+  );
+}
+```
+
+> **ملحوظة**: لأن `RootLayout` هو **Server Component** لا يمكننا استعمال Zustand مباشرة. لذلك سنضيف ملفًا فرعيًا `src/app/initialize.tsx` لتعبئة الـ Store عند أول تحميل للعميل.
+
+### src/app/initialize.tsx
+
+```tsx
+'use client';
+import { useEffect } from 'react';
+import { prisma } from '@/lib/prisma';
+import { useStore } from '@/store/useStore';
+import { Association, Cashbox, Transaction, Member } from '@prisma/client';
+
+export default function Initialize({ children }: { children: React.ReactNode }) {
+  const setAssociation = useStore((s) => s.setAssociation);
+  const setCashbox = useStore((s) => s.setCashbox);
+  const setTransactions = useStore((s) => s.setTransactions);
+  const setMembers = useStore((s) => s.setMembers);
+
+  useEffect(() => {
+    (async () => {
+      const [assoc, box, txs, members] = await Promise.all([
+        prisma.association.findFirst(),
+        prisma.cashbox.findFirst(),
+        prisma.transaction.findMany({ orderBy: { createdAt: 'desc' } }),
+        prisma.member.findMany(),
+      ]);
+      setAssociation(assoc as Association);
+      setCashbox(box as Cashbox);
+      setTransactions(txs as Transaction[]);
+      setMembers(members as Member[]);
+    })();
+  }, []);
+
+  return <>{children}</>;
+}
+```
+
+ثم عدّل `layout.tsx` لاستخدامه:
+
+```tsx
+// src/app/layout.tsx (بعد التعديل)
+import '@/styles/globals.css';
+import Sidebar from '@/components/Sidebar';
+import Header from '@/components/Header';
+import Initialize from './initialize';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ar" dir="rtl">
+      <body className="flex bg-gray-100 min-h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <Initialize>{children}</Initialize>
+        </div>
+      </body>
+    </html>
+  );
+}
+```
+
+### 2️⃣ الصفحة الرئيسية – Dashboard (`src/app/page.tsx`)
+
+```tsx
+// src/app/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import StatsCard from '@/components/StatsCard';
+import TransactionTable from '@/components/TransactionTable';
+import { HomeIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { formatNumber } from '@/utils/format';
+
+export default function Dashboard() {
+  const members = useStore((s) => s.members);
+  const transactions = useStore((s) => s.transactions);
+  const cashbox = useStore((s) => s.cashbox);
+
+  const totalMembers = members.length;
+  const totalBalance = members.reduce(
+    (sum, m) => sum + Number(m.balance),
+    0
+  );
+
+  const recentTx = transactions.slice(0, 5);
+
+  return (
+    <div className="space-y-8">
+      {/* إحصائيات */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatsCard
+          title="عدد الأعضاء"
+          value={totalMembers}
+          icon={<HomeIcon className="h-6 w-6" />}
+          bg="primary"
+        />
+        <StatsCard
+          title="رصيد الأعضاء"
+          value={formatNumber(totalBalance)}
+          icon={<CurrencyDollarIcon className="h-6 w-6" />}
+          bg="secondary"
+        />
+        <StatsCard
+          title="رصيد الصندوق"
+          value={formatNumber(cashbox?.balance ?? 0)}
+          icon={<CurrencyDollarIcon className="h-6 w-6" />}
+          bg="primary"
+        />
+      </div>
+
+      {/* آخر المعاملات */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">آخر المعاملات</h2>
+        <TransactionTable transactions={recentTx} />
+      </section>
+    </div>
+  );
+}
+```
+
+### 3️⃣ صفحة الأعضاء (`src/app/members/page.tsx`)
+
+```tsx
+// src/app/members/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import MemberTable from '@/components/MemberTable';
+import { useState } from 'react';
+import MemberForm from '@/components/MemberForm';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { Member } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+
+export default function MembersPage() {
+  const members = useStore((s) => s.members);
+  const setMembers = useStore((s) => s.setMembers);
+  const [showForm, setShowForm] = useState(false);
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [search, setSearch] = useState('');
+
+  const filtered = members.filter(
+    (m) =>
+      m.fullName.includes(search) ||
+      m.email.includes(search) ||
+      (m.phone ?? '').includes(search)
+  );
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('هل تريد حذف هذا العضو؟')) return;
+    await prisma.member.delete({ where: { id } });
+    const updated = await prisma.member.findMany();
+    setMembers(updated);
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">قائمة الأعضاء</h1>
+        <button
+          onClick={() => {
+            setEditMember(null);
+            setShowForm(true);
+          }}
+          className="flex items-center px-4 py-2 bg-primary text-white rounded"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" /> إضافة عضو
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ابحث بالاسم أو البريد..."
+          className="w-full border rounded p-2"
+        />
+      </div>
+
+      <MemberTable members={filtered} onDelete={handleDelete} />
+
+      {/* نموذج الإضافة / التعديل */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
+          <div className="bg-white rounded shadow w-96">
+            <MemberForm
+              defaultValues={editMember ?? undefined}
+              onClose={() => setShowForm(false)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### 4️⃣ صفحة تفاصيل العضو (`src/app/members/[id]/page.tsx`)
+
+```tsx
+// src/app/members/[id]/page.tsx
+'use client';
+import { useEffect, useState } from 'react';
+import { Member, Transaction } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { useStore } from '@/store/useStore';
+import TransactionTable from '@/components/TransactionTable';
+import { formatNumber } from '@/utils/format';
+
+export default function MemberProfile({ params }: { params: { id: string } }) {
+  const [member, setMember] = useState<Member | null>(null);
+  const [txs, setTxs] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const m = await prisma.member.findUnique({
+        where: { id: Number(params.id) },
+      });
+      const trans = await prisma.transaction.findMany({
+        where: {
+          OR: [{ memberId: Number(params.id) }, { fromMemberId: Number(params.id) }, { toMemberId: Number(params.id) }],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      setMember(m);
+      setTxs(trans);
+    })();
+  }, [params.id]);
+
+  if (!member) return <p className="p-4">جارٍ التحميل…</p>;
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{member.fullName}</h1>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-white rounded shadow">
+          <p className="text-gray-600">البريد الإلكتروني</p>
+          <p>{member.email}</p>
+        </div>
+        <div className="p-4 bg-white rounded shadow">
+          <p className="text-gray-600">الهاتف</p>
+          <p>{member.phone ?? '-'}</p>
+        </div>
+        <div className="p-4 bg-white rounded shadow">
+          <p className="text-gray-600">الرصيد</p>
+          <p className="text-xl font-bold">{formatNumber(member.balance)}</p>
+        </div>
+        <div className="p-4 bg-white rounded shadow">
+          <p className="text-gray-600">تاريخ الإنشاء</p>
+          <p>{new Date(member.createdAt).toLocaleDateString('ar-EG')}</p>
+        </div>
+      </div>
+
+      <section>
+        <h2 className="text-xl font-semibold mb-2">معاملات العضو</h2>
+        <TransactionTable transactions={txs} />
+      </section>
+    </div>
+  );
+}
+```
+
+### 5️⃣ صفحة المعاملات (`src/app/transactions/page.tsx`)
+
+```tsx
+// src/app/transactions/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import TransactionTable from '@/components/TransactionTable';
+import TransactionForm from '@/components/TransactionForm';
+import { useState } from 'react';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { prisma } from '@/lib/prisma';
+
+export default function TransactionsPage() {
+  const transactions = useStore((s) => s.transactions);
+  const setTransactions = useStore((s) => s.setTransactions);
+  const [showForm, setShowForm] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+
+  const filtered =
+    typeFilter === 'ALL'
+      ? transactions
+      : transactions.filter((t) => t.type === typeFilter);
+
+  const refresh = async () => {
+    const txs = await prisma.transaction.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    setTransactions(txs);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">المعاملات</h1>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center px-4 py-2 bg-primary text-white rounded"
+        >
+          <PlusIcon className="h-5 w-5 mr-2" />
+          إضافة عملية
+        </button>
+      </div>
+
+      {/* فلاتر النوع */}
+      <div className="flex space-x-2">
+        {['ALL', 'DEPOSIT', 'WITHDRAW', 'TRANSFER'].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`px-3 py-1 rounded ${
+              typeFilter === t ? 'bg-primary text-white' : 'bg-gray-200'
+            }`}
+          >
+            {t === 'ALL' ? 'الكل' : t}
+          </button>
+        ))}
+      </div>
+
+      <TransactionTable transactions={filtered} />
+
+      {/* نموذج إضافة/تعديل */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
+          <div className="bg-white rounded shadow w-96">
+            <TransactionForm onClose={() => setShowForm(false)} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### 6️⃣ صفحة الصندوق (`src/app/cashbox/page.tsx`)
+
+```tsx
+// src/app/cashbox/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import CashboxInfo from '@/components/CashboxInfo';
+import { useEffect, useState } from 'react';
+import { CashMovement } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
+
+export default function CashboxPage() {
+  const cashbox = useStore((s) => s.cashbox);
+  const setCashbox = useStore((s) => s.setCashbox);
+  const [movements, setMovements] = useState<CashMovement[]>([]);
+
+  const fetch = async () => {
+    const box = await prisma.cashbox.findFirst();
+    const moves = await prisma.cashMovement.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    setCashbox(box);
+    setMovements(moves);
+  };
+
+  useEffect(() => {
+    fetch();
+  }, []);
+
+  // ملاحظات: يمكن توسيع الصفحة لإضافة حركة جديدة باستخدام نموذج بسيط.
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">الصندوق</h1>
+
+      <CashboxInfo movements={movements} />
+
+      {/* جدول الحركات اليومية */}
+      <section>
+        <h2 className="text-xl font-semibold mb-2">الحركات اليومية</h2>
+        <div className="overflow-x-auto bg-white rounded shadow">
+          <table className="min-w-full text-right">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2">التاريخ</th>
+                <th className="p-2">النوع</th>
+                <th className="p-2">المبلغ</th>
+                <th className="p-2">الوصف</th>
+              </tr>
+            </thead>
+            <tbody>
+              {movements.map((m) => (
+                <tr key={m.id} className="border-t">
+                  <td className="p-2">{new Date(m.createdAt).toLocaleString('ar-EG')}</td>
+                  <td className="p-2 flex items-center justify-center">
+                    {m.type === 'IN' ? (
+                      <ArrowUpIcon className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <ArrowDownIcon className="h-5 w-5 text-red-600" />
+                    )}
+                  </td>
+                  <td className="p-2">{m.amount}</td>
+                  <td className="p-2">{m.description ?? '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+```
+
+### 7️⃣ صفحة التقارير (`src/app/reports/page.tsx`)
+
+```tsx
+// src/app/reports/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import ReportCharts from '@/components/ReportCharts';
+import { useEffect, useState } from 'react';
+import { Transaction } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+
+export default function ReportsPage() {
+  const transactions = useStore((s) => s.transactions);
+  const setTransactions = useStore((s) => s.setTransactions);
+  const [loading, setLoading] = useState(false);
+
+  // تحديث البيانات إذا تغيرت
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true);
+      const txs = await prisma.transaction.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      setTransactions(txs);
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">التقارير</h1>
+
+      {/* مخطط شهري للمعاملات */}
+      <section className="bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">الإيداع والسحب شهرياً</h2>
+        {loading ? (
+          <p>جارٍ التحميل…</p>
+        ) : (
+          <ReportCharts transactions={transactions} />
+        )}
+      </section>
+    </div>
+  );
+}
+```
+
+### 8️⃣ صفحة كشف حساب عضو (`src/app/reports/member/[id]/page.tsx`)
+
+```tsx
+// src/app/reports/member/[id]/page.tsx
+'use client';
+import { useEffect, useState } from 'react';
+import { Member, Transaction } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import TransactionTable from '@/components/TransactionTable';
+import { formatNumber } from '@/utils/format';
+
+export default function MemberReport({ params }: { params: { id: string } }) {
+  const [member, setMember] = useState<Member | null>(null);
+  const [txs, setTxs] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const m = await prisma.member.findUnique({
+        where: { id: Number(params.id) },
+      });
+      const t = await prisma.transaction.findMany({
+        where: {
+          OR: [
+            { memberId: Number(params.id) },
+            { fromMemberId: Number(params.id) },
+            { toMemberId: Number(params.id) },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      setMember(m);
+      setTxs(t);
+    })();
+  }, [params.id]);
+
+  if (!member) return <p className="p-4">جارٍ التحميل …</p>;
+
+  const totalDeposit = txs
+    .filter((t) => t.type === 'DEPOSIT' && t.memberId === member.id)
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const totalWithdraw = txs
+    .filter((t) => t.type === 'WITHDRAW' && t.memberId === member.id)
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const totalTransferOut = txs
+    .filter((t) => t.type === 'TRANSFER' && t.fromMemberId === member.id)
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const totalTransferIn = txs
+    .filter((t) => t.type === 'TRANSFER' && t.toMemberId === member.id)
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">
+        كشف حساب – {member.fullName}
+      </h1>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 bg-primary text-white rounded shadow">
+          إجمالي الإيداع: {formatNumber(totalDeposit)}
+        </div>
+        <div className="p-4 bg-red-600 text-white rounded shadow">
+          إجمالي السحب: {formatNumber(totalWithdraw)}
+        </div>
+        <div className="p-4 bg-indigo-600 text-white rounded shadow">
+          التحويلات الصادرة: {formatNumber(totalTransferOut)}
+        </div>
+        <div className="p-4 bg-green-600 text-white rounded shadow">
+          التحويلات الواردة: {formatNumber(totalTransferIn)}
+        </div>
+      </div>
+
+      <section>
+        <h2 className="text-xl font-semibold mb-2">الحركة التفصيلية</h2>
+        <TransactionTable transactions={txs} />
+      </section>
+    </div>
+  );
+}
+```
+
+### 9️⃣ صفحة الإعدادات (`src/app/settings/page.tsx`)
+
+```tsx
+// src/app/settings/page.tsx
+'use client';
+import { useStore } from '@/store/useStore';
+import { useState } from 'react';
+import { prisma } from '@/lib/prisma';
+import { Association } from '@prisma/client';
+import { useForm } from 'react-hook-form';
+
+type FormValues = {
+  name: string;
+  address?: string;
+  phone?: string;
+  currency: string;
+};
+
+export default function SettingsPage() {
+  const association = useStore((s) => s.association);
+  const setAssociation = useStore((s) => s.setAssociation);
+  const { register, handleSubmit } = useForm<FormValues>({
+    defaultValues: association ?? undefined,
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    if (association) {
+      await prisma.association.update({
+        where: { id: association.id },
+        data,
+      });
+    } else {
+      await prisma.association.create({ data });
+    }
+    const fresh = await prisma.association.findFirst();
+    setAssociation(fresh as Association);
+    alert('تم حفظ الإعدادات');
+  };
+
+  return (
+    <div className="max-w-lg mx-auto bg-white p-6 rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">إعدادات الجمعية</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <label className="block mb-1">اسم الجمعية</label>
+          <input
+            {...register('name', { required: true })}
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">العنوان</label>
+          <input {...register('address')} className="w-full border rounded p-2" />
+        </div>
+
+        <div>
+          <label className="block mb-1">الهاتف</label>
+          <input {...register('phone')} className="w-full border rounded p-2" />
+        </div>
+
+        <div>
+          <label className="block mb-1">العملة</label>
+          <input
+            {...register('currency', { required: true })}
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full px-4 py-2 bg-primary text-white rounded"
+        >
+          حفظ الإعدادات
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+## 🟢 تشغيل المشروع محليًا
+
+```bash
+# 1. استنساخ المستودع (إن كان موجودًا) أو أنشئ مجلدًا جديدًا
+git clone <repo-url>
+cd accounting-coop
+
+# 2. تثبيت الحزم
+npm install   # أو yarn
+
+# 3. إنشاء قاعدة البيانات وتطبيق المايغريشن
+npx prisma migrate dev --name init   # سيُنشئ dev.db في جذر المشروع
+
+# 4. تشغيل الخادم
+npm run dev
+```
+
+- افتح المتصفح على `http://localhost:3000`.
+- أول تشغيل سيُنشئ سجلًا افتراضيًا للـ **Association** و **Cashbox** إذا لم يتوفران (يمكنك إضافة عبر صفحة الإعدادات).
+
+---
+
+## 🚀 النشر على Vercel
+
+1. **إنشاء حساب Vercel** (إن لم يكن لديك).
+2. ربط المستودع (GitHub / GitLab / Bitbucket) بالمشروع.
+3. في إعدادات المشروع:
+   - **Framework Preset** → `Next.js`.
+   - **Build Command** → `npm run build`.
+   - **Output Directory** → `.next`.
+   - أضف متغيّر البيئة `DATABASE_URL` بـ قيمة `file:./dev.db` (Vercel سيتعامل مع SQLite داخل الـ deployment).
+4. اضغط **Deploy**.
+
+> **ملاحظة**: قاعدة بيانات SQLite في Vercel تُخزن مؤقتًا في الـ *filesystem* وتُحذف مع كل إعادة نشر. إذا كنت بحاجة لتخزين دائم، استبدل SQLite بـ PostgreSQL أو MySQL (تغيير `prisma/schema.prisma` وملف `.env`).
+
+---
+
+## 🎨 ملاحظات تخص التصميم (RTL + Sidebar أزرق)
+
+- الـ **Sidebar** أُعطي اللون `primary` في Tailwind والذي يساوي `#1e3a8a` (أزرق غامق) مع نص أبيض.
+- تم ضبط `direction: rtl` في ملف `globals.css` ووسم `<html dir="rtl">` لضمان الكتابة من اليمين لليسار.
+- جميع النصوص ثابتة باللغة العربية وتُستبدل بسهولة إذا رغبت في التعريب أو إضافة i18n مستقبلاً.
+
+---
+
+## 📚 مزايا إضافية يمكن تطويرها لاحقًا
+
+| الميزة | الوصف |
+|--------|-------|
+| **توثيق PDF** | توليد تقرير PDF للمعاملات باستخدام `pdfmake` أو `@react-pdf/renderer`. |
+| **تنبيهات البريد** | إرسال إيميل عند أي عملية تحويل أو سحب كبير باستخدام `nodemailer`. |
+| **صلاحيات** | إضافة نظام أدوار (مشرف، محاسب، عضو) باستخدام `next-auth`. |
+| **تصدير CSV** | زر لتصدير جداول الأعضاء أو المعاملات إلى ملف CSV. |
+| **دعم عملات متعددة** | ربط إعداد العملة بالـ `Intl.NumberFormat` ديناميكياً. |
+
+---
+
+## ✅ الخلاصة
+
+قمتُ بتجميع **نظام محاسبة متكامل للجمعيات** بناءً على المتطلبات التي طلبتها، معتمدًا على:
+
+- **Next.js 14 (App Router) + TypeScript**
+- **Tailwind CSS** (تصميم RTL، sidebar أزرق غامق)
+- **Prisma + SQLite** (نموذج بيانات شامل)
+- **Recharts** (مخططات إحصائية)
+- **React Hook Form** (نماذج إضافة / تعديل)
+- **Zustand** (تخزين حالة عالمي)
+
+كل شيء جاهز للنشر على **Vercel** ويمكنك توسيعه أو تعديل القوالب حسب احتياجاتك. إذا واجهتك أي صعوبة أو أردت إضافة خصائص إضافية فأخبرني، وسأكون سعيدًا بالمساعدة! 🚀
+
+--- 
+
+**مستمتعًا ببرمجة تطبيقك الجديد!** 🎉

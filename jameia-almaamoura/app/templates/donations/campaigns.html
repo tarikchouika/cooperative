@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('campaigns') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('campaigns') }}</h1>
+    {% if session.role in ['admin', 'accountant'] %}
+    <a href="{{ url_for('donations.new_donation') }}" class="btn btn-primary">
+        <i class="fas fa-hand-holding-heart"></i> {{ t('new_donation') }}
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>{{ t('campaigns') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('campaign_name') }}</th>
+                <th>{{ t('goal_amount') }}</th>
+                <th>{{ t('collected_amount') }}</th>
+                <th>{{ t('progress') }}</th>
+                <th>{{ t('start_date') }}</th>
+                <th>{{ t('end_date') }}</th>
+                <th>{{ t('status') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in campaigns %}
+            <tr>
+                <td>{{ c.campaign_name }}</td>
+                <td>${{ "%.2f"|format(c.goal_amount) if c.goal_amount else "0.00" }}</td>
+                <td>${{ "%.2f"|format(c.collected_amount) }}</td>
+                <td style="min-width: 160px;">
+                    <div class="campaign-progress">
+                        <div class="progress-fill" style="width: {{ (c.collected_amount / c.goal_amount * 100) if c.goal_amount else 0 }}%"></div>
+                    </div>
+                    <small>{{ "%.1f"|format((c.collected_amount / c.goal_amount * 100) if c.goal_amount else 0) }}%</small>
+                </td>
+                <td>{{ c.start_date or '—' }}</td>
+                <td>{{ c.end_date or '—' }}</td>
+                <td>
+                    <span class="badge {{ 'badge-success' if c.status == 'active' else 'badge-warning' }}">{{ c.status|title }}</span>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" style="text-align:center; color:var(--text-light);">{{ t('no_data') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.campaign-progress { background: #F0F2F5; border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 4px; }
+.campaign-progress .progress-fill { background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; border-radius: 8px; }
+</style>
+{% endblock %}

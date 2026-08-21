@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('projects') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('projects') }}</h1>
+    <a href="{{ url_for('projects.new') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ t('new_project') }}
+    </a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><i class="fas fa-project-diagram icon"></i><div><h3>{{ stats.total_projects }}</h3><p>{{ t('total_projects') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-play-circle icon" style="color:#4CAF50"></i><div><h3>{{ stats.active_count }}</h3><p>{{ t('active_projects') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-coins icon" style="color:#2196F3"></i><div><h3>${{ "%.2f"|format(stats.total_budget) }}</h3><p>{{ t('total_budget') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-arrow-up icon" style="color:#FF9800"></i><div><h3>${{ "%.2f"|format(stats.total_spent) }}</h3><p>{{ t('total_spent') }}</p></div></div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('project_number') }}</th>
+                <th>{{ t('project_name') }}</th>
+                <th>{{ t('category') }}</th>
+                <th>{{ t('start_date') }}</th>
+                <th>{{ t('end_date') }}</th>
+                <th>{{ t('budget') }}</th>
+                <th>{{ t('spent') }}</th>
+                <th>{{ t('status') }}</th>
+                <th>{{ t('manager') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in projects %}
+            <tr>
+                <td>{{ p.project_number }}</td>
+                <td><a href="{{ url_for('projects.detail', id=p.id) }}">{{ p.project_name }}</a></td>
+                <td>{{ p.category or '—' }}</td>
+                <td>{{ p.start_date or '—' }}</td>
+                <td>{{ p.end_date or '—' }}</td>
+                <td>${{ "%.2f"|format(p.budget or 0) }}</td>
+                <td>${{ "%.2f"|format(p.spent_amount or 0) }}</td>
+                <td><span class="badge {{ p.status_badge }}">{{ t('status_' + p.status) }}</span></td>
+                <td>{{ p.manager_name or '—' }}</td>
+                <td>
+                    <a href="{{ url_for('projects.detail', id=p.id) }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> {{ t('view') }}
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="text-center">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}{{ beneficiary.full_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user"></i> {{ beneficiary.full_name }}</h1>
+    <a href="{{ url_for('beneficiaries.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<div class="grid-2">
+    <!-- بطاقة الملف الشخصي -->
+    <div class="card">
+        <h3><i class="fas fa-id-card"></i> {{ t('beneficiary_profile') }}</h3>
+        <table>
+            <tr>
+                <th>{{ t('beneficiary_number') }}</th>
+                <td>{{ beneficiary.beneficiary_number }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('full_name') }}</th>
+                <td>{{ beneficiary.full_name }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('national_id') }}</th>
+                <td>{{ beneficiary.national_id }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('gender') }}</th>
+                <td>
+                    {% if beneficiary.gender == 'male' %}{{ t('male') }}
+                    {% elif beneficiary.gender == 'female' %}{{ t('female') }}
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>{{ t('birthdate') }}</th>
+                <td>{{ beneficiary.birthdate or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('family_size') }}</th>
+                <td>{{ beneficiary.family_size }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('address') }}</th>
+                <td>{{ beneficiary.address or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('phone') }}</th>
+                <td>{{ beneficiary.phone or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('income_level') }}</th>
+                <td>
+                    {% if beneficiary.income_level in ['low', 'medium', 'high'] %}
+                        {{ t('income_' + beneficiary.income_level) }}
+                    {% else %}
+                        {{ beneficiary.income_level or '-' }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>{{ t('social_status') }}</th>
+                <td>{{ beneficiary.social_status or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('needs_description') }}</th>
+                <td>{{ beneficiary.needs_description or '-' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('registered_date') }}</th>
+                <td>{{ beneficiary.registered_date }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('status') }}</th>
+                <td>
+                    {% if beneficiary.is_active %}
+                        <span class="badge badge-success">{{ t('active') }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ t('inactive') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- نموذج إضافة مساعدة -->
+    <div class="card">
+        <h3><i class="fas fa-hand-holding-heart"></i> {{ t('add_assistance') }}</h3>
+        <form method="POST" action="{{ url_for('beneficiaries.add_assistance', id=beneficiary.id) }}">
+            <div class="form-group">
+                <label for="project_id">{{ t('project') }}</label>
+                <select id="project_id" name="project_id" class="form-control">
+                    <option value="">{{ t('select_project') }}</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}">{{ p.project_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="assistance_type">{{ t('assistance_type') }}</label>
+                <select id="assistance_type" name="assistance_type" class="form-control">
+                    <option value="cash">{{ t('assistance_cash') }}</option>
+                    <option value="in_kind">{{ t('assistance_in_kind') }}</option>
+                    <option value="medical">{{ t('assistance_medical') }}</option>
+                    <option value="educational">{{ t('assistance_educational') }}</option>
+                    <option value="other">{{ t('assistance_other') }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="amount_or_description">{{ t('amount_or_description') }}</label>
+                <input type="text" id="amount_or_description" name="amount_or_description" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="notes">{{ t('notes') }}</label>
+                <textarea id="notes" name="notes" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> {{ t('record_assistance') }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- سجل المساعدات -->
+<div class="card">
+    <h3><i class="fas fa-history"></i> {{ t('assistance_history') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('date') }}</th>
+                <th>{{ t('project') }}</th>
+                <th>{{ t('assistance_type') }}</th>
+                <th>{{ t('amount_or_description') }}</th>
+                <th>{{ t('notes') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assistance %}
+            <tr>
+                <td>{{ a.assistance_date }}</td>
+                <td>{{ a.project_name or '-' }}</td>
+                <td>{{ t('assistance_' + a.assistance_type) }}</td>
+                <td>{{ a.amount_or_description or '-' }}</td>
+                <td>{{ a.notes or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align:center; padding:30px; color:#999;">
+                    <i class="fas fa-inbox"></i> {{ t('no_data') }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

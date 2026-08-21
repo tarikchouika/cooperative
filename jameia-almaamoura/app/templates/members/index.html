@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('members') }}{% endblock %}
+
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .table-scroll { overflow-x: auto; }
+    .search-form { display: flex; gap: 10px; margin-bottom: 15px; max-width: 420px; }
+</style>
+
+<div class="page-header">
+    <h1>{{ t('members') }}</h1>
+    <a href="{{ url_for('members.new') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> {{ t('add_member') }}
+    </a>
+</div>
+
+<!-- إحصائيات الأعضاء -->
+<div class="stats-grid">
+    <div class="stat-card"><i class="fas fa-users icon"></i><div><h3>{{ total_members }}</h3><p>{{ t('total_members') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-user-check icon" style="color:#4CAF50"></i><div><h3>{{ active_members }}</h3><p>{{ t('active_members') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-coins icon" style="color:#2196F3"></i><div><h3>${{ "%.2f"|format(fees_this_year) }}</h3><p>{{ t('fees_this_year') }}</p></div></div>
+    <div class="stat-card"><i class="fas fa-user-clock icon" style="color:#FF9800"></i><div><h3>{{ unpaid_members }}</h3><p>{{ t('unpaid_members') }}</p></div></div>
+</div>
+
+<div class="card">
+    <!-- البحث -->
+    <form method="GET" action="{{ url_for('members.index') }}" class="search-form">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="{{ t('search_members') }}">
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fas fa-search"></i> {{ t('search') }}
+        </button>
+    </form>
+
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('member_number') }}</th>
+                <th>{{ t('full_name') }}</th>
+                <th>{{ t('membership_type') }}</th>
+                <th>{{ t('join_date') }}</th>
+                <th>{{ t('annual_fee') }}</th>
+                <th>{{ t('phone') }}</th>
+                <th>{{ t('fee_status') }}</th>
+                <th>{{ t('actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set type_classes = {'founding': 'badge-info', 'active': 'badge-success', 'honorary': 'badge-warning', 'associate': 'badge-info'} %}
+            {% for m in members %}
+            <tr>
+                <td>{{ m.member_number }}</td>
+                <td>{{ m.full_name }}</td>
+                <td><span class="badge {{ type_classes.get(m.membership_type, 'badge-info') }}">{{ t('membership_type_' + m.membership_type) }}</span></td>
+                <td>{{ m.join_date }}</td>
+                <td>${{ "%.2f"|format(m.annual_fee or 0) }}</td>
+                <td>{{ m.phone or '—' }}</td>
+                <td>
+                    {% if m.fee_status == 'paid' %}
+                    <span class="badge badge-success">{{ t('fee_status_paid') }}</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ t('fee_status_unpaid') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('members.fees', member_id=m.id) }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-coins"></i> {{ t('record_fee') }}
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

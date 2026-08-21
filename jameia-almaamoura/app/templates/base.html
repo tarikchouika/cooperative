@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" dir="{{ dir }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t('app_name') }}{% endblock %}</title>
+    <script>
+        // [FIX] تطبيق الوضع القاتم/الفاتح قبل عرض الصفحة (يمنع الوميض)
+        (function () {
+            var s = localStorage.getItem('app_theme');
+            var t = s === 'dark' || s === 'light' ? s :
+                (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    {% if session.user_id %}
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="fas fa-hands-helping fa-2x"></i>
+            <h2>{{ t('app_name') }}</h2>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.endpoint == 'dashboard.index' }}"><i class="fas fa-home"></i> <span>{{ t('dashboard') }}</span></a></li>
+            <li><a href="{{ url_for('members.index') }}"><i class="fas fa-users"></i> <span>{{ t('members') }}</span></a></li>
+            <li><a href="{{ url_for('finance.dashboard') }}"><i class="fas fa-chart-line"></i> <span>{{ t('finance') }}</span></a></li>
+            <li><a href="{{ url_for('donations.index') }}"><i class="fas fa-donate"></i> <span>{{ t('donations') }}</span></a></li>
+            <li><a href="{{ url_for('projects.index') }}"><i class="fas fa-project-diagram"></i> <span>{{ t('projects') }}</span></a></li>
+            <li><a href="{{ url_for('beneficiaries.index') }}"><i class="fas fa-hand-holding-heart"></i> <span>{{ t('beneficiaries') }}</span></a></li>
+            {% if session.role in ['admin', 'secretary'] %}
+            <li><a href="{{ url_for('legal.index') }}"><i class="fas fa-gavel"></i> <span>{{ t('legal') }}</span></a></li>
+            {% endif %}
+            <li><a href="{{ url_for('reports.index') }}"><i class="fas fa-file-alt"></i> <span>{{ t('reports') }}</span></a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="sidebar-tools">
+                <div class="lang-switcher">
+                    <button class="lang-btn {{ 'active' if current_lang == 'en' }}" data-lang="en">EN</button>
+                    <button class="lang-btn {{ 'active' if current_lang == 'ar' }}" data-lang="ar">AR</button>
+                    <button class="lang-btn {{ 'active' if current_lang == 'fr' }}" data-lang="fr">FR</button>
+                </div>
+                <button class="theme-toggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">
+                    <i class="fas fa-sun icon-sun"></i>
+                    <i class="fas fa-moon icon-moon"></i>
+                </button>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> {{ t('logout') }}
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+        <div class="topbar">
+            <div class="user-info">
+                <i class="fas fa-user-circle fa-2x"></i>
+                <div>
+                    <strong>{{ session.full_name }}</strong>
+                    <small>{{ t('role_' + session.role) }}</small>
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <i class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+    {% else %}
+    {% block public_content %}{% endblock %}
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>
+        // Language switcher (server-side re-render)
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.dataset.lang;
+                window.location.href = window.location.pathname + '?lang=' + lang;
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

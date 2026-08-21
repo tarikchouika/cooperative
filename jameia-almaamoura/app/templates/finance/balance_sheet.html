@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ t('balance_sheet') }}{% endblock %}
+{% block content %}
+{% set net_assets = balances.get('asset', 0) - balances.get('liability', 0) %}
+{% set equation_ok = (net_assets - balances.get('equity', 0))|abs < 0.01 %}
+<style>
+    .text-center { text-align: center; }
+    .equation-check { margin-top: 20px; padding: 15px; background: #F8F9FA; border-radius: 8px; }
+    .balance-note { margin-top: 15px; color: var(--text-light); font-size: 0.9rem; }
+</style>
+<div class="page-header">
+    <h1>{{ t('balance_sheet') }}</h1>
+    <a href="{{ url_for('finance.trial_balance') }}" class="btn btn-secondary">
+        <i class="fas fa-balance-scale"></i> {{ t('trial_balance') }}
+    </a>
+</div>
+
+<div class="grid-3">
+    <div class="card">
+        <h3>{{ t('assets') }}</h3>
+        <p style="font-size:1.6rem; color:var(--primary); font-weight:700;">${{ "%.2f"|format(balances.get('asset', 0)) }}</p>
+    </div>
+    <div class="card">
+        <h3>{{ t('liabilities') }}</h3>
+        <p style="font-size:1.6rem; color:var(--primary); font-weight:700;">${{ "%.2f"|format(balances.get('liability', 0)) }}</p>
+    </div>
+    <div class="card">
+        <h3>{{ t('equity') }}</h3>
+        <p style="font-size:1.6rem; color:var(--primary); font-weight:700;">${{ "%.2f"|format(balances.get('equity', 0)) }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>{{ t('balance_sheet_summary') }}</h3>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('account_type') }}</th>
+                <th>{{ t('amount') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ t('assets') }}</td>
+                <td>${{ "%.2f"|format(balances.get('asset', 0)) }}</td>
+            </tr>
+            <tr>
+                <td>{{ t('liabilities') }}</td>
+                <td>${{ "%.2f"|format(balances.get('liability', 0)) }}</td>
+            </tr>
+            <tr>
+                <td>{{ t('equity') }}</td>
+                <td>${{ "%.2f"|format(balances.get('equity', 0)) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="equation-check">
+        <strong>{{ t('equation_check') }}:</strong>
+        {{ t('assets') }} - {{ t('liabilities') }} = {{ t('equity') }}<br>
+        ${{ "%.2f"|format(balances.get('asset', 0)) }} - ${{ "%.2f"|format(balances.get('liability', 0)) }} = ${{ "%.2f"|format(net_assets) }}
+        <span class="badge {{ 'badge-success' if equation_ok else 'badge-danger' }}">
+            {{ t('balanced') if equation_ok else t('out_of_balance') }}
+        </span>
+    </div>
+    <p class="balance-note">
+        <i class="fas fa-info-circle"></i> {{ t('detail_from_trial_balance') }}
+        <a href="{{ url_for('finance.trial_balance') }}">{{ t('trial_balance') }}</a>
+    </p>
+</div>
+{% endblock %}

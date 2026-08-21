@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('add_member') }}{% endblock %}
+
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .required-mark { color: var(--danger); }
+</style>
+
+<div class="page-header">
+    <h1>{{ t('add_member') }}</h1>
+    <a href="{{ url_for('members.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('members.new') }}">
+        <div class="grid-3">
+            <div class="form-group">
+                <label>{{ t('full_name') }} <span class="required-mark">*</span></label>
+                <input type="text" name="full_name" class="form-control" value="{{ form.get('full_name', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>{{ t('national_id') }}</label>
+                <input type="text" name="national_id" class="form-control" value="{{ form.get('national_id', '') if form else '' }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t('membership_type') }} <span class="required-mark">*</span></label>
+                <select name="membership_type" class="form-control" required>
+                    <option value="">—</option>
+                    {% for mt in ['founding', 'active', 'honorary', 'associate'] %}
+                    <option value="{{ mt }}" {{ 'selected' if form and form.get('membership_type') == mt }}>{{ t('membership_type_' + mt) }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>{{ t('join_date') }} <span class="required-mark">*</span></label>
+                <input type="date" name="join_date" class="form-control" value="{{ form.get('join_date', '') if form else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>{{ t('annual_fee') }}</label>
+                <input type="number" step="0.01" min="0" name="annual_fee" class="form-control" value="{{ form.get('annual_fee', '0') if form else '0' }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t('birthdate') }}</label>
+                <input type="date" name="birthdate" class="form-control" value="{{ form.get('birthdate', '') if form else '' }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t('gender') }}</label>
+                <select name="gender" class="form-control">
+                    <option value="">—</option>
+                    <option value="male" {{ 'selected' if form and form.get('gender') == 'male' }}>{{ t('male') }}</option>
+                    <option value="female" {{ 'selected' if form and form.get('gender') == 'female' }}>{{ t('female') }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>{{ t('phone') }}</label>
+                <input type="text" name="phone" class="form-control" value="{{ form.get('phone', '') if form else '' }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t('email') }}</label>
+                <input type="email" name="email" class="form-control" value="{{ form.get('email', '') if form else '' }}">
+            </div>
+            <div class="form-group">
+                <label>{{ t('address') }}</label>
+                <input type="text" name="address" class="form-control" value="{{ form.get('address', '') if form else '' }}">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> {{ t('save') }}
+        </button>
+        <a href="{{ url_for('members.index') }}" class="btn btn-secondary">{{ t('cancel') }}</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('membership_fees') }}{% endblock %}
+
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .table-scroll { overflow-x: auto; }
+</style>
+
+<div class="page-header">
+    <h1>{{ t('membership_fees') }}</h1>
+    <a href="{{ url_for('members.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<div class="grid-2">
+    <!-- نموذج تسجيل الاشتراك السنوي -->
+    <div class="card">
+        <h3>{{ t('record_fee') }}</h3>
+        <form method="POST" action="{{ url_for('members.fees') }}">
+            <div class="form-group">
+                <label>{{ t('member') }} <span style="color:var(--danger)">*</span></label>
+                <select name="member_id" class="form-control" required>
+                    <option value="">—</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {{ 'selected' if selected_member_id == m.id }}>{{ m.full_name }} ({{ m.member_number }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ t('year') }} <span style="color:var(--danger)">*</span></label>
+                    <input type="number" name="year" class="form-control" value="{{ current_year }}" required>
+                </div>
+                <div class="form-group">
+                    <label>{{ t('amount') }} <span style="color:var(--danger)">*</span></label>
+                    <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ t('payment_date') }} <span style="color:var(--danger)">*</span></label>
+                    <input type="date" name="payment_date" class="form-control" value="{{ today }}" required>
+                </div>
+                <div class="form-group">
+                    <label>{{ t('payment_method') }}</label>
+                    <select name="payment_method" class="form-control">
+                        <option value="cash">{{ t('method_cash') }}</option>
+                        <option value="bank_transfer">{{ t('method_bank_transfer') }}</option>
+                        <option value="cheque">{{ t('method_cheque') }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ t('receipt_number') }}</label>
+                <input type="text" name="receipt_number" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>{{ t('notes') }}</label>
+                <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {{ t('save') }}
+            </button>
+        </form>
+    </div>
+
+    <!-- سجل اشتراكات العضو المحدد -->
+    <div class="card">
+        <h3>{{ t('fee_history') }}</h3>
+        {% if selected_member %}
+        <p style="margin-bottom:15px; color:var(--text-light)">
+            <strong style="color:var(--primary)">{{ selected_member.full_name }}</strong> — {{ selected_member.member_number }}
+        </p>
+        {% endif %}
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t('year') }}</th>
+                    <th>{{ t('amount') }}</th>
+                    <th>{{ t('payment_date') }}</th>
+                    <th>{{ t('payment_method') }}</th>
+                    <th>{{ t('receipt_number') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in fees %}
+                <tr>
+                    <td>{{ f.year }}</td>
+                    <td>${{ "%.2f"|format(f.amount) }}</td>
+                    <td>{{ f.payment_date }}</td>
+                    <td>{{ t('method_' + (f.payment_method or 'cash')) }}</td>
+                    <td>{{ f.receipt_number or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center">{{ t('no_data') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ t('income_statement') }}{% endblock %}
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .totals-row td { background: #F8F9FA; font-weight: 600; }
+    .table-scroll { overflow-x: auto; }
+    .filter-bar { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+    .filter-bar .form-group { flex: 0 0 auto; min-width: 180px; margin-bottom: 0; }
+    .net-income { font-size: 1.8rem; font-weight: 700; margin-bottom: 0; }
+    .net-income.positive { color: var(--success); }
+    .net-income.negative { color: var(--danger); }
+</style>
+<div class="page-header">
+    <h1>{{ t('income_statement') }}</h1>
+</div>
+
+<div class="card">
+    <form method="GET" class="filter-bar">
+        <div class="form-group">
+            <label>{{ t('from_date') }}</label>
+            <input type="date" name="from" value="{{ from_date }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>{{ t('to_date') }}</label>
+            <input type="date" name="to" value="{{ to_date }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> {{ t('filter') }}</button>
+        </div>
+    </form>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>{{ t('revenue') }}</h3>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>{{ t('account_name') }}</th><th>{{ t('amount') }}</th></tr></thead>
+            <tbody>
+                {% for r in revenue %}
+                <tr>
+                    <td>{{ r.account_name }}</td>
+                    <td>${{ "%.2f"|format(r.amount) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2" class="text-center">{{ t('no_data') }}</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="totals-row">
+                    <td><strong>{{ t('total_revenue') }}</strong></td>
+                    <td><strong>${{ "%.2f"|format(total_revenue) }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <h3>{{ t('expenses') }}</h3>
+        <div class="table-scroll">
+        <table>
+            <thead><tr><th>{{ t('account_name') }}</th><th>{{ t('amount') }}</th></tr></thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr>
+                    <td>{{ e.account_name }}</td>
+                    <td>${{ "%.2f"|format(e.amount) }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2" class="text-center">{{ t('no_data') }}</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="totals-row">
+                    <td><strong>{{ t('total_expenses') }}</strong></td>
+                    <td><strong>${{ "%.2f"|format(total_expenses) }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>{{ t('net_income') }}</h3>
+    <p class="net-income {{ 'positive' if net_income >= 0 else 'negative' }}">
+        ${{ "%.2f"|format(net_income) }}
+        <span class="badge {{ 'badge-success' if net_income >= 0 else 'badge-danger' }}">
+            {{ t('profit') if net_income >= 0 else t('loss') }}
+        </span>
+    </p>
+</div>
+{% endblock %}

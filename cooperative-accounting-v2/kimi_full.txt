@@ -1,0 +1,32 @@
+FreeLLMAPI
+Models
+Playground
+Keys
+Analytics
+Premium
+Playground
+
+Send a chat completion through the router and see which provider serves it.
+
+Kimi K2.6
+Clear
+أنشئ نظام محاسبة متكامل للتعاونيات بواجهة عربية احترافية.
+
+التقنيات: Next.js 14 App Router + TypeScript + Tailwind CSS + Prisma SQLite + Recharts + React Hook Form + Zustand
+
+الصفحات:
+1. لوحة تحكم: إحصائيات + رسوم بيانية + آخر المعاملات
+2. الأعضاء: إضافة/تعديل/حذف + بحث + ملف شخصي
+3. المعاملات: إيداع/سحب/تحويل + فلتر + إجماليات
+4. الصندوق: رصيد + حركات يومية
+5. التقارير: شهري + كشف حساب عضو
+6. الإعدادات: معلومات الجمعية + العملة
+
+التصميم: واجهة عربية RTL، sidebar داكن أزرق، تصميم عصري احترافي، متجاوب.
+
+أعطني الكود الكامل الجاهز للنشر على Vercel مع جميع الملفات.
+
+Error: All models rate-limited. Last error: HuggingFace Router API error 402: Payment Required
+
+System prompt
+Send

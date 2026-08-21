@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t('new_meeting') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-users"></i> {{ t('new_meeting') }}</h1>
+</div>
+
+<div class="card">
+    <form method="post" action="{{ url_for('legal.new_meeting') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label>{{ t('meeting_type') }}</label>
+                <select name="meeting_type" class="form-control" required>
+                    <option value="general_assembly">{{ t('general_assembly') }}</option>
+                    <option value="board">{{ t('board') }}</option>
+                    <option value="committee">{{ t('committee') }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>{{ t('meeting_date') }}</label>
+                <input type="date" name="meeting_date" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>{{ t('location') }}</label>
+                <input type="text" name="location" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>{{ t('attendees_count') }}</label>
+                <input type="number" name="attendees_count" class="form-control" min="0">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>{{ t('agenda') }}</label>
+            <textarea name="agenda" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>{{ t('minutes_text') }}</label>
+            <textarea name="minutes_text" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="form-group">
+            <label>{{ t('decisions') }}</label>
+            <textarea name="decisions" class="form-control" rows="4"></textarea>
+        </div>
+        <div style="margin-top: 15px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {{ t('save') }}
+            </button>
+            <a href="{{ url_for('legal.meetings') }}" class="btn btn-secondary">{{ t('back') }}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

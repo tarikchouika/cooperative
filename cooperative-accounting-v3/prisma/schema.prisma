@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// الجمعية
+model Association {
+  id          Int      @id @default(autoincrement())
+  name        String
+  address     String?
+  phone       String?
+  currency    String   @default("د.إ")
+  createdAt   DateTime @default(now())
+}
+
+// الأعضاء
+model Member {
+  id               Int            @id @default(autoincrement())
+  fullName         String
+  email            String         @unique
+  phone            String?
+  balance          Float          @default(0.0)
+  createdAt        DateTime       @default(now())
+  transactions     Transaction[]  @relation("MemberTransactions")
+  fromTransfers    Transaction[]  @relation("FromTransfers")
+  toTransfers      Transaction[]  @relation("ToTransfers")
+}
+
+// المعاملات
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  type          String    // DEPOSIT, WITHDRAW, TRANSFER
+  amount        Float
+  description   String?
+  fromMemberId  Int?
+  toMemberId    Int?
+  memberId      Int?
+  createdAt     DateTime  @default(now())
+
+  member        Member?   @relation("MemberTransactions", fields: [memberId], references: [id])
+  fromMember    Member?   @relation("FromTransfers", fields: [fromMemberId], references: [id])
+  toMember      Member?   @relation("ToTransfers", fields: [toMemberId], references: [id])
+}
+
+// صندوق الجمعية
+model Cashbox {
+  id          Int             @id @default(autoincrement())
+  balance     Float           @default(0.0)
+  movements   CashMovement[]
+}
+
+// حركات الصندوق اليومية
+model CashMovement {
+  id          Int       @id @default(autoincrement())
+  type        String    // IN, OUT
+  amount      Float
+  description String?
+  createdAt   DateTime  @default(now())
+  cashboxId   Int
+  cashbox     Cashbox   @relation(fields: [cashboxId], references: [id])
+}

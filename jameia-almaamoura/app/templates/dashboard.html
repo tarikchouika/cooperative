@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('dashboard') }}{% endblock %}
+
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .table-scroll { overflow-x: auto; }
+    .chart-box { height: 260px; position: relative; }
+</style>
+
+<div class="page-header">
+    <h1>{{ t('dashboard') }}</h1>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-users icon"></i>
+        <div>
+            <h3>{{ total_members }}</h3>
+            <p>{{ t('total_members') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-wallet icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(total_balance) }}</h3>
+            <p>{{ t('total_balance') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-donate icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(monthly_donations) }}</h3>
+            <p>{{ t('monthly_donations') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-project-diagram icon"></i>
+        <div>
+            <h3>{{ active_projects }}</h3>
+            <p>{{ t('active_projects') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-hand-holding-heart icon"></i>
+        <div>
+            <h3>{{ beneficiaries_count }}</h3>
+            <p>{{ t('total_beneficiaries') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-chart-line icon"></i>
+        <div>
+            <h3>${{ "%.2f"|format(monthly_expenses) }}</h3>
+            <p>{{ t('monthly_expenses') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- الرسوم البيانية -->
+<div class="grid-2">
+    <div class="card">
+        <h3>{{ t('revenue_vs_expenses') }}</h3>
+        <div class="chart-box">
+            <canvas id="revenueExpenseChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3>{{ t('donations_by_type') }}</h3>
+        <div class="chart-box">
+            <canvas id="donationsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>{{ t('recent_transactions') }}</h3>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t('entry_number') }}</th>
+                    <th>{{ t('date') }}</th>
+                    <th>{{ t('description') }}</th>
+                    <th>{{ t('amount') }}</th>
+                    <th>{{ t('status') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set status_classes = {'approved': 'success', 'pending': 'warning', 'rejected': 'danger'} %}
+                {% for tx in recent_transactions %}
+                <tr>
+                    <td>{{ tx.entry_number }}</td>
+                    <td>{{ tx.entry_date }}</td>
+                    <td>{{ tx.description or '—' }}</td>
+                    <td>${{ "%.2f"|format(tx.total_debit) }}</td>
+                    <td><span class="badge badge-{{ status_classes.get(tx.status, 'info') }}">{{ tx.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center">{{ t('no_data') }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <h3>{{ t('projects_by_status') }}</h3>
+        <div class="chart-box">
+            <canvas id="projectsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- تنبيهات الوثائق القانونية -->
+    <div class="card">
+        <h3>{{ t('expiring_documents') }}</h3>
+        {% if alerts %}
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t('doc_type') }}</th>
+                    <th>{{ t('doc_number') }}</th>
+                    <th>{{ t('expiry_date') }}</th>
+                    <th>{{ t('days_left') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alerts %}
+                <tr>
+                    <td>{{ a.doc_type or '—' }}</td>
+                    <td>{{ a.doc_number or '—' }}</td>
+                    <td>{{ a.expiry_date }}</td>
+                    <td>
+                        {% if a.days_left < 0 %}
+                        <span class="badge badge-danger">{{ t('expired') }}</span>
+                        {% elif a.days_left <= 30 %}
+                        <span class="badge badge-warning">{{ a.days_left }} {{ t('days') }}</span>
+                        {% else %}
+                        <span class="badge badge-info">{{ a.days_left }} {{ t('days') }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="text-center">{{ t('no_data') }}</p>
+        {% endif %}
+        <p style="margin-top:15px; color:var(--text-light)">
+            <i class="fas fa-hand-holding-heart" style="color:var(--secondary)"></i>
+            {{ t('zakat_balance') }}: <strong style="color:var(--primary)">${{ "%.2f"|format(zakat_balance) }}</strong>
+        </p>
+    </div>
+
+    <!-- إجراءات سريعة -->
+    <div class="card">
+        <h3>{{ t('quick_actions') }}</h3>
+        <div class="quick-actions">
+            <a href="{{ url_for('donations.new_donation') }}" class="action-btn">
+                <i class="fas fa-donate"></i><span>{{ t('new_donation') }}</span>
+            </a>
+            {% if session.role in ['admin', 'accountant'] %}
+            <a href="{{ url_for('finance.new_journal_entry') }}" class="action-btn">
+                <i class="fas fa-book"></i><span>{{ t('new_journal_entry') }}</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('projects.new') }}" class="action-btn">
+                <i class="fas fa-project-diagram"></i><span>{{ t('new_project') }}</span>
+            </a>
+            <a href="{{ url_for('members.new') }}" class="action-btn">
+                <i class="fas fa-user-plus"></i><span>{{ t('new_member') }}</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // خط زمني: الإيرادات مقابل المصروفات (آخر 6 أشهر)
+    const revCtx = document.getElementById('revenueExpenseChart');
+    if (revCtx) {
+        new Chart(revCtx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_months | tojson }},
+                datasets: [
+                    { label: {{ t('revenue') | tojson }}, data: {{ chart_revenue | tojson }},
+                      borderColor: '#1B5E20', backgroundColor: 'rgba(27, 94, 32, 0.1)', fill: true, tension: 0.3 },
+                    { label: {{ t('expenses') | tojson }}, data: {{ chart_expenses | tojson }},
+                      borderColor: '#F44336', backgroundColor: 'rgba(244, 67, 54, 0.1)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // رسم دائري: توزيع التبرعات حسب النوع
+    const donCtx = document.getElementById('donationsChart');
+    if (donCtx) {
+        new Chart(donCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ donations_by_type | map(attribute='label') | list | tojson }},
+                datasets: [{
+                    data: {{ donations_by_type | map(attribute='value') | list | tojson }},
+                    backgroundColor: ['#1B5E20', '#F9A825', '#4CAF50', '#FFC107', '#2196F3', '#F44336']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // رسم أعمدة: المشاريع حسب الحالة
+    const barCtx = document.getElementById('projectsChart');
+    if (barCtx) {
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ projects_by_status | map(attribute='label') | list | tojson }},
+                datasets: [{
+                    label: {{ t('projects') | tojson }},
+                    data: {{ projects_by_status | map(attribute='value') | list | tojson }},
+                    backgroundColor: '#F9A825'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+</script>
+{% endblock %}

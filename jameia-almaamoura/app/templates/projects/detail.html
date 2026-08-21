@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ project.project_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ project.project_name }}</h1>
+    <a href="{{ url_for('projects.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> {{ t('back') }}
+    </a>
+</div>
+
+<style>
+    .progress-track { background: #EEEEEE; border-radius: 10px; height: 14px; overflow: hidden; margin: 15px 0; }
+    .progress-fill { background: var(--primary); height: 100%; border-radius: 10px; transition: width .3s; }
+    .progress-fill.progress-danger { background: var(--danger); }
+</style>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>{{ t('project_details') }}</h3>
+        <table>
+            <tr>
+                <th>{{ t('project_number') }}</th>
+                <td>{{ project.project_number }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('category') }}</th>
+                <td>{{ project.category or '—' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('status') }}</th>
+                <td><span class="badge {{ project.status_badge }}">{{ t('status_' + project.status) }}</span></td>
+            </tr>
+            <tr>
+                <th>{{ t('manager') }}</th>
+                <td>{{ project.manager_name or '—' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('start_date') }}</th>
+                <td>{{ project.start_date or '—' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('end_date') }}</th>
+                <td>{{ project.end_date or '—' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('beneficiaries_count') }}</th>
+                <td>{{ project.beneficiaries_count or 0 }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('description') }}</th>
+                <td>{{ project.description or '—' }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('notes') }}</th>
+                <td>{{ project.notes or '—' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>{{ t('budget') }} / {{ t('spent') }}</h3>
+
+        <div class="progress-track">
+            <div class="progress-fill {{ 'progress-danger' if project.spent_percent > 80 else '' }}"
+                 style="width: {{ [project.spent_percent, 100]|min }}%"></div>
+        </div>
+
+        <table>
+            <tr>
+                <th>{{ t('budget') }}</th>
+                <td>${{ "%.2f"|format(project.budget or 0) }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('spent') }}</th>
+                <td>${{ "%.2f"|format(project.spent_amount or 0) }}</td>
+            </tr>
+            <tr>
+                <th>{{ t('progress') }}</th>
+                <td>{{ "%.1f"|format(project.spent_percent) }}%</td>
+            </tr>
+        </table>
+
+        {% if project.spent_percent > 100 %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> {{ t('over_budget') }}
+        </div>
+        {% elif project.spent_percent > 80 %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i> {{ t('budget_warning') }}
+        </div>
+        {% endif %}
+
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 15px;">
+            <i class="fas fa-info-circle"></i> {{ t('expenses_note') }}
+        </p>
+    </div>
+</div>
+{% endblock %}

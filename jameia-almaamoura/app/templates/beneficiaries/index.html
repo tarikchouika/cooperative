@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ t('beneficiaries') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-hand-holding-heart"></i> {{ t('beneficiaries') }}</h1>
+    <a href="{{ url_for('beneficiaries.new') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> {{ t('add_beneficiary') }}
+    </a>
+</div>
+
+<!-- بطاقات الإحصائيات -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon"><i class="fas fa-hand-holding-heart"></i></div>
+        <div>
+            <h3>{{ stats.total }}</h3>
+            <p>{{ t('total_beneficiaries') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <div>
+            <h3>{{ stats.families }}</h3>
+            <p>{{ t('total_families') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon"><i class="fas fa-calendar-check"></i></div>
+        <div>
+            <h3>{{ stats.this_month }}</h3>
+            <p>{{ t('assistance_this_month') }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon"><i class="fas fa-box-open"></i></div>
+        <div>
+            <h3>{{ stats.total_assistance }}</h3>
+            <p>{{ t('total_assistance') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- جدول المستفيدين -->
+<div class="card">
+    <h3><i class="fas fa-list"></i> {{ t('beneficiaries_list') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('beneficiary_number') }}</th>
+                <th>{{ t('full_name') }}</th>
+                <th>{{ t('phone') }}</th>
+                <th>{{ t('family_size') }}</th>
+                <th>{{ t('income_level') }}</th>
+                <th>{{ t('registered_date') }}</th>
+                <th>{{ t('status') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in beneficiaries %}
+            <tr>
+                <td>{{ b.beneficiary_number }}</td>
+                <td><a href="{{ url_for('beneficiaries.view', id=b.id) }}">{{ b.full_name }}</a></td>
+                <td>{{ b.phone or '-' }}</td>
+                <td>{{ b.family_size }}</td>
+                <td>
+                    {% if b.income_level in ['low', 'medium', 'high'] %}
+                        {{ t('income_' + b.income_level) }}
+                    {% else %}
+                        {{ b.income_level or '-' }}
+                    {% endif %}
+                </td>
+                <td>{{ b.registered_date }}</td>
+                <td>
+                    {% if b.is_active %}
+                        <span class="badge badge-success">{{ t('active') }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ t('inactive') }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('beneficiaries.view', id=b.id) }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> {{ t('view') }}
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align:center; padding:30px; color:#999;">
+                    <i class="fas fa-inbox"></i> {{ t('no_data') }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

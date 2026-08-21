@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ t('chart_of_accounts') }}{% endblock %}
+{% block content %}
+<style>
+    /* شارة الإيرادات (primary غير موجودة في main.css) */
+    .badge-primary { background: rgba(33, 150, 243, 0.15); color: #2196F3; }
+    .text-center { text-align: center; }
+    .table-scroll { overflow-x: auto; }
+</style>
+<div class="page-header">
+    <h1>{{ t('chart_of_accounts') }}</h1>
+    <a href="{{ url_for('finance.new_journal_entry') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ t('new_journal_entry') }}
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('account_code') }}</th>
+                <th>{{ t('account_name') }}</th>
+                <th>{{ t('account_type') }}</th>
+                <th>{{ t('parent_account') }}</th>
+                <th>{{ t('status') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for acc in accounts %}
+            <tr>
+                <td>{{ acc.account_code }}</td>
+                <td>{{ acc.account_name }}</td>
+                <td>
+                    <span class="badge badge-{{ {'asset':'success','liability':'danger','equity':'info','revenue':'primary','expense':'warning'}.get(acc.account_type, 'info') }}">
+                        {{ t('account_type_' + acc.account_type) }}
+                    </span>
+                </td>
+                <td>{{ acc.parent_name or '-' }}</td>
+                <td>
+                    {% if acc.is_active %}
+                    <span class="badge badge-success">{{ t('active') }}</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ t('inactive') }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

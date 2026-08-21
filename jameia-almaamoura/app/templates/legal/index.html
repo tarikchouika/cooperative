@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ t('legal') }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-gavel"></i> {{ t('legal') }}</h1>
+    <div>
+        <a href="{{ url_for('legal.meetings') }}" class="btn btn-secondary">
+            <i class="fas fa-users"></i> {{ t('meetings') }}
+        </a>
+        <a href="{{ url_for('legal.new_document') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> {{ t('add_document') }}
+        </a>
+    </div>
+</div>
+
+{% if alerts %}
+<!-- لوحة تنبيهات الوثائق -->
+<div class="card">
+    <h3><i class="fas fa-exclamation-triangle"></i> {{ t('alerts') }}</h3>
+    {% for alert in alerts %}
+    <div class="alert {{ 'alert-success' if alert.type == 'warning' else 'alert-error' }}">
+        <span class="badge {{ 'badge-danger' if alert.type in ['expired', 'critical'] else 'badge-warning' }}">
+            {{ t(alert.type) }}
+        </span>
+        <strong>{{ alert.doc['doc_type'] }} ({{ alert.doc['doc_number'] }})</strong>
+        {% if alert.type == 'expired' %}
+        — {{ alert.days | abs }} {{ t('days_overdue') }}
+        {% else %}
+        — {{ alert.days }} {{ t('days_left') }}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- جدول الوثائق القانونية -->
+<div class="card">
+    <h3><i class="fas fa-file-contract"></i> {{ t('documents') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('doc_type') }}</th>
+                <th>{{ t('doc_number') }}</th>
+                <th>{{ t('issue_date') }}</th>
+                <th>{{ t('expiry_date') }}</th>
+                <th>{{ t('issuing_authority') }}</th>
+                <th>{{ t('status') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for doc in documents %}
+            <tr>
+                <td>{{ doc['doc_type'] or '—' }}</td>
+                <td>{{ doc['doc_number'] or '—' }}</td>
+                <td>{{ doc['issue_date'] or '—' }}</td>
+                <td>{{ doc['expiry_date'] or '—' }}</td>
+                <td>{{ doc['issuing_authority'] or '—' }}</td>
+                <td>
+                {% if doc['days_left'] is none %}
+                    <span class="badge badge-info">{{ t('no_expiry') }}</span>
+                {% elif doc['days_left'] < 0 %}
+                    <span class="badge badge-danger">{{ t('expired') }}</span>
+                {% elif doc['days_left'] <= 30 %}
+                    <span class="badge badge-danger">{{ doc['days_left'] }} {{ t('days_left') }}</span>
+                {% elif doc['days_left'] <= 90 %}
+                    <span class="badge badge-warning">{{ doc['days_left'] }} {{ t('days_left') }}</span>
+                {% else %}
+                    <span class="badge badge-success">{{ doc['days_left'] }} {{ t('days_left') }}</span>
+                {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:20px;">{{ t('no_data') }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- جدول العقود -->
+<div class="card">
+    <h3><i class="fas fa-file-signature"></i> {{ t('contracts') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('contract_number') }}</th>
+                <th>{{ t('party_name') }}</th>
+                <th>{{ t('contract_type') }}</th>
+                <th>{{ t('start_date') }}</th>
+                <th>{{ t('end_date') }}</th>
+                <th>{{ t('value') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in contracts %}
+            <tr>
+                <td>{{ c['contract_number'] or '—' }}</td>
+                <td>{{ c['party_name'] or '—' }}</td>
+                <td>{{ c['contract_type'] or '—' }}</td>
+                <td>{{ c['start_date'] or '—' }}</td>
+                <td>{{ c['end_date'] or '—' }}</td>
+                <td>${{ "%.2f"|format(c['value'] or 0) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:20px;">{{ t('no_data') }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

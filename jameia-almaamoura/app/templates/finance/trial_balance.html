@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ t('trial_balance') }}{% endblock %}
+{% block content %}
+<style>
+    .text-center { text-align: center; }
+    .totals-row td { background: #F8F9FA; font-weight: 600; }
+    .table-scroll { overflow-x: auto; }
+    .filter-bar { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+    .filter-bar .form-group { flex: 0 0 auto; min-width: 180px; margin-bottom: 0; }
+</style>
+<div class="page-header">
+    <h1>{{ t('trial_balance') }}</h1>
+</div>
+
+<div class="card">
+    <form method="GET" class="filter-bar">
+        <div class="form-group">
+            <label>{{ t('from_date') }}</label>
+            <input type="date" name="from" value="{{ from_date }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>{{ t('to_date') }}</label>
+            <input type="date" name="to" value="{{ to_date }}" class="form-control">
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> {{ t('filter') }}</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('account_code') }}</th>
+                <th>{{ t('account_name') }}</th>
+                <th>{{ t('debit') }}</th>
+                <th>{{ t('credit') }}</th>
+                <th>{{ t('net_balance') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in balances %}
+            <tr>
+                <td>{{ b.account_code }}</td>
+                <td>{{ b.account_name }}</td>
+                <td>${{ "%.2f"|format(b.total_debit) }}</td>
+                <td>${{ "%.2f"|format(b.total_credit) }}</td>
+                <td>${{ "%.2f"|format(b.total_debit - b.total_credit) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center">{{ t('no_data') }}</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td colspan="2"><strong>{{ t('totals') }}</strong></td>
+                <td><strong>${{ "%.2f"|format(balances|sum(attribute='total_debit')) }}</strong></td>
+                <td><strong>${{ "%.2f"|format(balances|sum(attribute='total_credit')) }}</strong></td>
+                <td><strong>${{ "%.2f"|format(balances|sum(attribute='total_debit') - balances|sum(attribute='total_credit')) }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    </div>
+</div>
+{% endblock %}
