@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id          Int          @id @default(autoincrement())
+  name        String
+  phone       String?
+  email       String?      @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  transactions Transaction[] @relation("MemberTransactions")
+  transfers   Transaction[] @relation("Transfer")
+}
+
+model Transaction {
+  id            Int       @id @default(autoincrement())
+  type          String    // DEPOSIT, WITHDRAW, TRANSFER
+  amount        Float
+  description   String?
+  createdAt     DateTime  @default(now())
+  memberId      Int
+  member        Member    @relation("MemberTransactions", fields: [memberId], references: [id])
+  targetMemberId Int?    // إذا كان التحويل
+  targetMember   Member? @relation("Transfer", fields: [targetMemberId], references: [id])
+}

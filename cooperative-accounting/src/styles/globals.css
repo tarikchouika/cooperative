@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* الخط العربي – يمكنك استبدال أي خط تريد */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+html {
+  font-family: 'Cairo', sans-serif;
+}
+
+/* تحسين RTL */
+body {
+  direction: rtl;
+}
